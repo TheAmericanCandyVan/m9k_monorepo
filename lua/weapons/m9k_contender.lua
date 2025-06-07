@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_contender") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_contender" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category                 = "M9K Sniper Rifles"
 SWEP.Author                   = ""
@@ -79,7 +79,7 @@ function SWEP:PrimaryAttack()
 
     local fx = EffectData()
     fx:SetEntity( self )
-    fx:SetOrigin( self:GetOwner():GetShootPos() )
+    fx:SetOrigin( self:GetOwner():M9K_GetShootPos() )
     fx:SetNormal( self:GetOwner():GetAimVector() )
     fx:SetAttachment( self.MuzzleAttachment )
     util.Effect( "rg_muzzle_rifle", fx )
@@ -140,7 +140,7 @@ function SWEP:Reload()
 
         if self:GetOwner():KeyDown( IN_USE ) then return end
 
-        if self.Silenced then
+        if self.SilencerAttached then
             self:DefaultReload( ACT_VM_RELOAD_SILENCED )
         else
             self:DefaultReload( ACT_VM_RELOAD )

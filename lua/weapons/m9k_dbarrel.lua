@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_dbarrel") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_dbarrel" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category               = "M9K Shotguns"
 SWEP.Author                 = ""
@@ -83,7 +83,7 @@ function SWEP:SecondaryAttack()
 
                 local fx = EffectData()
                 fx:SetEntity( self )
-                fx:SetOrigin( self:GetOwner():GetShootPos() )
+                fx:SetOrigin( self:GetOwner():M9K_GetShootPos() )
                 fx:SetNormal( self:GetOwner():GetAimVector() )
                 fx:SetAttachment( self.MuzzleAttachment )
 
@@ -119,7 +119,7 @@ function SWEP:PrimaryAttack()
 
             local fx = EffectData()
             fx:SetEntity( self )
-            fx:SetOrigin( self:GetOwner():GetShootPos() )
+            fx:SetOrigin( self:GetOwner():M9K_GetShootPos() )
             fx:SetNormal( self:GetOwner():GetAimVector() )
             fx:SetAttachment( self.MuzzleAttachment )
 

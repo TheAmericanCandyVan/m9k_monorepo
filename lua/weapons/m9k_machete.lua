@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_machete") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_machete" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category               = "M9K Specialties"
 SWEP.Author                 = ""
@@ -52,10 +52,10 @@ SWEP.Primary.Damage         = 150 -- Base damage per bullet
 SWEP.RunSightsPos           = Vector( 0, 0, 0 )
 SWEP.RunSightsAng           = Vector( -25.577, 0, 0 )
 
--- SWEP.Primary.Sound    = Sound("Weapon_Knife.Slash") --woosh
--- SWEP.KnifeShink = ("Weapon_Knife.HitWall")
--- SWEP.KnifeSlash = ("Weapon_Knife.Hit")
--- SWEP.KnifeStab = ("Weapon_Knife.Stab")
+-- SWEP.Primary.Sound    = "Weapon_Knife.Slash" --woosh
+-- SWEP.KnifeShink = "Weapon_Knife.HitWall"
+-- SWEP.KnifeSlash = "Weapon_Knife.Hit"
+-- SWEP.KnifeStab = "Weapon_Knife.Stab"
 
 SWEP.Primary.Sound          = "weapons/blades/woosh.mp3" --woosh
 SWEP.KnifeShink             = "weapons/blades/hitwall.mp3"
@@ -94,7 +94,7 @@ end
 
 function SWEP:HackNSlash()
     local owner = self:GetOwner()
-    local pos = owner:GetShootPos()
+    local pos = owner:M9K_GetShootPos()
     local ang = owner:GetAimVector()
     local damagedice = math.Rand( 0.95, 1.05 )
     local pain = self.Primary.Damage * damagedice
@@ -143,7 +143,7 @@ function SWEP:SecondaryAttack()
         if SERVER then
             local knife = ents.Create( "m9k_thrown_knife" )
             knife:SetAngles( self:GetOwner():EyeAngles() )
-            knife:SetPos( self:GetOwner():GetShootPos() )
+            knife:SetPos( self:GetOwner():M9K_GetShootPos() )
             knife:SetOwner( self:GetOwner() )
             knife:SetPhysicsAttacker( self:GetOwner() )
             knife:Spawn()

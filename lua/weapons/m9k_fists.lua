@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_fists") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_fists" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category               = "M9K Specialties"
 SWEP.Author                 = ""
@@ -87,7 +87,7 @@ function SWEP:PrimaryAttack()
 end
 
 function SWEP:Jab()
-    local pos = self:GetOwner():GetShootPos()
+    local pos = self:GetOwner():M9K_GetShootPos()
     local ang = self:GetOwner():GetAimVector()
     local damagedice = math.Rand( 0.95, 1.05 )
     local pain = self.Primary.Damage * damagedice

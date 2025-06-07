@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_matador") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_matador" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category               = "M9K Specialties"
 SWEP.Author                 = ""
@@ -79,7 +79,7 @@ end
 
 function SWEP:FireRocket()
     local aim = self:GetOwner():GetAimVector()
-    local pos = self:GetOwner():GetShootPos()
+    local pos = self:GetOwner():M9K_GetShootPos()
 
     if SERVER then
         local rocket = ents.Create( self.Primary.Round )
@@ -89,7 +89,7 @@ function SWEP:FireRocket()
         rocket:SetOwner( self:GetOwner() )
         rocket:Spawn()
         rocket:Activate()
-        util.ScreenShake( self:GetOwner():GetShootPos(), 1000, 10, 0.3, 500 )
+        util.ScreenShake( self:GetOwner():M9K_GetShootPos(), 1000, 10, 0.3, 500 )
     end
 end
 

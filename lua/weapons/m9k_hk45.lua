@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_hk45") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_hk45" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category                = "M9K Pistols"
 SWEP.Author                = ""
@@ -29,7 +29,7 @@ SWEP.Spawnable                = true
 SWEP.AdminSpawnable            = true
 SWEP.FiresUnderwater = false
 
-SWEP.Primary.Sound            = Sound("Weapon_hk45.Single")        -- Script that calls the primary fire sound
+SWEP.Primary.Sound            = "Weapon_hk45.Single"        -- Script that calls the primary fire sound
 SWEP.Primary.RPM            = 750            -- This is in Rounds Per Minute
 SWEP.Primary.ClipSize            = 8        -- Size of a clip
 SWEP.Primary.DefaultClip        = 45        -- Bullets you start with

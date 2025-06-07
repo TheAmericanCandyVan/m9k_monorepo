@@ -50,12 +50,11 @@ end
 
 SWEP.Penetration            = true
 SWEP.Ricochet               = true
-SWEP.RicochetCoin           = 1
 SWEP.BoltAction             = false
 SWEP.Scoped                 = false
 SWEP.ShellTime              = .35
 SWEP.CanBeSilenced          = false
-SWEP.Silenced               = false
+SWEP.SilencerAttached               = false
 SWEP.NextSilence            = 0
 SWEP.SelectiveFire          = false
 SWEP.NextFireSelect         = 0
@@ -66,21 +65,28 @@ local SERVER                = SERVER
 local MASK_SHOT             = MASK_SHOT
 local IN_USE                = IN_USE
 
+if SERVER then
+    util.AddNetworkString( "m9k_muzzleflash" )
+end
+
+local defaultClipMult = GetConVar( "M9KDefaultClip" )
 local dmgMultCvar = GetConVar( "M9KDamageMultiplier" )
+local dynamicrecoilCvar = GetConVar( "M9KDynamicRecoil" )
 local damageMultiplier = dmgMultCvar:GetFloat()
+local IS_SINGLEPLAYER = game.SinglePlayer()
 
 local function dmgMultCallback( _, _, new )
     damageMultiplier = tonumber( new )
 end
 cvars.AddChangeCallback( "M9KDamageMultiplier", dmgMultCallback, "gunbase" )
 
+local m9k_enginespread = CreateConVar( "m9k_enginespread", "0", { FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY }, "Use engine spread for M9K weapons, not recommended" )
+
 SWEP.IronSightsPos = Vector( 0, 0, 0 )
 SWEP.IronSightsAng = Vector( 0, 0, 0 )
 
 SWEP.VElements = {}
 SWEP.WElements = {}
-
-local defaultClipMult = GetConVar( "M9KDefaultClip" )
 
 local entMeta = FindMetaTable( "Entity" )
 local entity_GetTable = entMeta.GetTable
@@ -133,6 +139,11 @@ function SWEP:Initialize()
     end
 end
 
+-- We have to do this to prevent weapon_base setting it back to pistol https://github.com/Facepunch/garrysmod/blob/master/garrysmod/gamemodes/base/entities/weapons/weapon_base/sh_anim.lua#L64
+function SWEP:OnReloaded()
+    self:SetWeaponHoldType( self:GetHoldType() )
+end
+
 function SWEP:SetupDataTables()
     self:NetworkVar( "Bool", "IronsightsActive" )
     self:NetworkVar( "Bool", "Reloading" )
@@ -158,7 +169,7 @@ function SWEP:Deploy()
     self.DrawCrosshair = self.OrigCrossHair
     self:SetHoldType( self.HoldType )
 
-    if self.Silenced then
+    if self.SilencerAttached then
         self:SendWeaponAnim( ACT_VM_DRAW_SILENCED )
     else
         self:SendWeaponAnim( ACT_VM_DRAW )
@@ -195,8 +206,99 @@ function SWEP:OnRemove()
     end
 end
 
-function SWEP:GetCapabilities()
-    return CAP_WEAPON_RANGE_ATTACK1, CAP_INNATE_RANGE_ATTACK1
+if CLIENT then
+    function SWEP:IsFirstPerson()
+        local owner = self:GetOwner()
+        local isLocalPlayer = owner == LocalPlayer()
+        local isFirstPerson = isLocalPlayer and not owner:ShouldDrawLocalPlayer()
+
+        return isFirstPerson
+    end
+    local thirdPersonShellType = {
+        pistol = "EjectBrass_9mm",
+        smg = "EjectBrass_556",
+        ar2 = "EjectBrass_762Nato",
+        shotgun = "EjectBrass_12Gauge",
+        AirboatGun = "EjectBrass_338Mag"
+    }
+
+    net.Receive( "m9k_muzzleflash", function()
+        local ent = net.ReadEntity()
+        if not IsValid( ent ) then return end
+
+        if ent.FireEffects and IsValid( ent:GetOwner() ) then
+            ent:FireEffects()
+        end
+    end )
+
+    function SWEP:FireEffects()
+        local isFirstPerson = self:IsFirstPerson()
+        local isSilenced = self.SilencerAttached or self.HasBuiltInSilencer
+
+        if not isFirstPerson then
+            local shellAtt = self:GetAttachment( 2 )
+            if shellAtt then
+                local shellEffectType = thirdPersonShellType[self.Primary.Ammo] or "ShellEject"
+                local shellEffect = EffectData()
+                shellEffect:SetOrigin( shellAtt.Pos )
+                shellEffect:SetAngles( shellAtt.Ang )
+                shellEffect:SetEntity( self )
+                shellEffect:SetFlags( 100 )
+                util.Effect( shellEffectType, shellEffect )
+            end
+        end
+
+        local muzzleAtt
+        if isFirstPerson then
+            muzzleAtt = self:GetOwner():GetViewModel():GetAttachment( 1 )
+        else
+            muzzleAtt = self:GetAttachment( 1 )
+        end
+
+        if muzzleAtt then
+            local dLight = DynamicLight( self:EntIndex() )
+            if dLight then
+                local lightTime = 1000 / 0.4
+                dLight.Pos = muzzleAtt.Pos
+                dLight.r = 252
+                dLight.g = 194
+                dLight.b = 66
+                dLight.Brightness = 2
+                dLight.Decay = lightTime
+                dLight.Size = isSilenced and 128 or 256
+                dLight.DieTime = CurTime() + lightTime
+                dLight.NoModel = true
+            end
+
+            -- Should be enabled once all the muzzle attachment positions are properly aligned in the world models
+            if not game.IsDedicated() and not isFirstPerson and not isSilenced then
+                local flash = EffectData()
+                flash:SetOrigin( muzzleAtt.Pos )
+                flash:SetAngles( muzzleAtt.Ang )
+                flash:SetScale( math.random( 0.8, 1.2 ) )
+                flash:SetEntity( self )
+                flash:SetAttachment( 1 )
+                util.Effect( "CS_MuzzleFlash", flash )
+            end
+        end
+    end
+end
+
+function SWEP:FireAnimationEvent( _pos, _ang, event, _options )
+    local isCssMuzzleFlash = ( event == 5001 or event == 5011 or event == 5021 or event == 5031 )
+    if isCssMuzzleFlash and ( self.SilencerAttached or self.HasBuiltInSilencer ) then return true end
+    if isCssMuzzleFlash and not self:IsFirstPerson() then return true end
+
+    if isCssMuzzleFlash and self.CSMuzzleFlashes then
+        local data = EffectData()
+        data:SetFlags( 0 )
+        data:SetEntity( self:GetOwner():GetViewModel() )
+        data:SetAttachment( math.floor( ( event - 4991 ) / 10 ) )
+        data:SetScale( 1 )
+        util.Effect( "CS_MuzzleFlash", data )
+
+        return true
+    end
 end
 
 local shellEffects = {
@@ -207,8 +309,22 @@ local shellEffects = {
 }
 
 function SWEP:FireAnimation()
+    -- Muzzle flash light
+    if SERVER then
+        local rf = RecipientFilter()
+        rf:AddPVS( self:GetPos() )
+        rf:RemovePlayer( self:GetOwner() )
+
+        net.Start( "m9k_muzzleflash" )
+        net.WriteEntity( self )
+        net.Send( rf )
+    end
+    if CLIENT and IsFirstTimePredicted() then
+        self:FireEffects()
+    end
+
     -- Sounds
-    local silenced = self.Silenced
+    local silenced = self.SilencerAttached
     if silenced then
         self:EmitSound( self.Primary.SilencedSound )
     else
@@ -237,7 +353,7 @@ function SWEP:FireAnimation()
         self:SendWeaponAnim( ACT_VM_IDLE )
     end
 
-    -- Effects only clientside, for the owner and if we're in first person
+    -- Effects only clientside, for the owner and if we're in first person aiming down sights, we do this because we aren't using the "real" fire animation
     if not CLIENT then return end
     if not IsFirstTimePredicted() then return end
     if self:GetOwner() ~= LocalPlayer() then return end
@@ -272,30 +388,23 @@ function SWEP:FireAnimation()
 end
 
 function SWEP:PrimaryAttack()
-    if not IsValid( self ) or not IsValid( self:GetOwner() ) then return end
+    if not self:CanPrimaryAttack() then return end
+    if self:GetOwner():KeyDown( IN_SPEED ) then
+        self:SetNextPrimaryFire( CurTime() + 0.2 )
+        return false
+    end
 
-    if self:CanPrimaryAttack() and self:GetOwner():IsPlayer() then
-        if not self:GetOwner():KeyDown( IN_SPEED ) and not self:GetOwner():KeyDown( IN_RELOAD ) then
-            self:ShootBulletInformation()
-            self:TakePrimaryAmmo( 1 )
+    self:ShootBulletInformation()
+    self:TakePrimaryAmmo( 1 )
 
-            self:FireAnimation()
+    self:FireAnimation()
 
-            self:GetOwner():SetAnimation( PLAYER_ATTACK1 )
-            self:GetOwner():MuzzleFlash()
-            self:SetNextPrimaryFire( CurTime() + 1 / (self.Primary.RPM / 60) )
-            self:CheckWeaponsAndAmmo()
-            self.RicochetCoin = (math.random( 1, 4 ))
-            if self.BoltAction then self:BoltBack() end
-        end
-    elseif self:CanPrimaryAttack() and self:GetOwner():IsNPC() then
-        self:ShootBulletInformation()
-        self:TakePrimaryAmmo( 1 )
-        self:EmitSound( self.Primary.Sound )
-        self:GetOwner():SetAnimation( PLAYER_ATTACK1 )
-        self:GetOwner():MuzzleFlash()
-        self:SetNextPrimaryFire( CurTime() + 1 / (self.Primary.RPM / 60) )
-        self.RicochetCoin = math.random( 1, 4 )
+    self:GetOwner():SetAnimation( PLAYER_ATTACK1 )
+    self:SetNextPrimaryFire( CurTime() + 1 / ( self.Primary.RPM / 60 ) )
+    self:CheckWeaponsAndAmmo()
+
+    if self.BoltAction then
+        self:BoltBack()
     end
 end
 
@@ -477,7 +586,7 @@ local ricochetAmmoTable = {
 
 function SWEP:BulletRicochet( iteration, attacker, bulletTrace, dmginfo, direction )
     local shouldRicochet = ricochetAmmoTable[self.Primary.Ammo] or false
-    if not shouldRicochet and self.RicochetCoin ~= 1 then return false end
+    if not shouldRicochet and math.random( 1, 4 ) ~= 1 then return false end
 
     if bulletTrace.MatType ~= MAT_METAL then
         local missSound = bulletMissSounds[math.random( #bulletMissSounds )]
@@ -543,7 +652,8 @@ local function getSpread( gun, dir, vec )
     local shotBias = ( ( shotBiasMax - shotBiasMin ) * bias ) + shotBiasMin
     local flatness = math.abs( bias ) * 0.5
 
-    local seed = util.CRC(  gun:GetCreationID() .. gun:EntIndex() .. CurTime() .. gun:GetModel() .. gun:GetOwner():GetUserGroup() )
+    local cmd = gun:GetOwner():GetCurrentCommand()
+    local seed = util.CRC(  gun:GetCreationID() .. gun:EntIndex() .. CurTime() .. gun:GetOwner():GetUserGroup() .. cmd:CommandNumber() .. cmd:TickCount() )
     local s = 0
     local function getRnd()
         s = s + 1
@@ -581,7 +691,7 @@ function SWEP:ShootBullet( damage, bulletCount, aimcone )
             bullet = {
                 Inflictor = self,
                 Num = bulletCount,
-                Src = owner:GetShootPos(),
+                Src = owner:M9K_GetShootPos(),
                 Dir = bulletDir,
                 Spread = Vector( aimcone, aimcone, 0 ),
                 Tracer = 3,
@@ -594,13 +704,15 @@ function SWEP:ShootBullet( damage, bulletCount, aimcone )
                 end
             }
         else
-            local spreadDir = getSpread( self, bulletDir, Vector( aimcone, aimcone, 0 ) )
+            local engineSpread = m9k_enginespread:GetBool()
+            local spreadDir = engineSpread and aimcone or Vector( 0, 0, 0 )
+            local dir = engineSpread and bulletDir or getSpread( self, bulletDir, Vector( aimcone, aimcone, 0 ) )
             bullet = {
                 Inflictor = self,
                 Num = bulletCount,
-                Src = owner:GetShootPos(),
-                Dir = spreadDir,
-                Spread = Vector( 0, 0, 0 ),
+                Src = owner:M9K_GetShootPos(),
+                Dir = dir,
+                Spread = spreadDir,
                 Tracer = 3,
                 TracerName = tracer,
                 Force = damage * 0.25,
@@ -612,9 +724,9 @@ function SWEP:ShootBullet( damage, bulletCount, aimcone )
             }
         end
 
-        if IsValid( owner ) then
-            owner:FireBullets( bullet )
-        end
+        owner:FireBullets( bullet )
+
+        hook.Run( "M9K_BulletFired", self, owner )
     end
 
     local x = util.SharedRandom( "m9k_viewpunch", -self.Primary.KickDown, -self.Primary.KickUp * self.KickUpMultiplier, 100 )
@@ -627,21 +739,21 @@ function SWEP:ShootBullet( damage, bulletCount, aimcone )
 
     owner:ViewPunch( anglo1 )
 
-    if SERVER and game.SinglePlayer() and not owner:IsNPC() then
+    if SERVER and IS_SINGLEPLAYER and not owner:IsNPC() then
         local offlineeyes = owner:EyeAngles()
         offlineeyes.pitch = offlineeyes.pitch + anglo1.pitch
         offlineeyes.yaw = offlineeyes.yaw + anglo1.yaw
-        if GetConVar( "M9KDynamicRecoil" ):GetBool() then
+        if dynamicrecoilCvar:GetBool() then
             owner:SetEyeAngles( offlineeyes )
         end
     end
 
-    if CLIENT and not game.SinglePlayer() and not owner:IsNPC() then
+    if CLIENT and not IS_SINGLEPLAYER and not owner:IsNPC() then
         -- case 1 old random
         local eyes = owner:EyeAngles()
         eyes.pitch = eyes.pitch + ( anglo1.pitch / 3 )
         eyes.yaw = eyes.yaw + ( anglo1.yaw / 3 )
-        if IsFirstTimePredicted() and GetConVar( "M9KDynamicRecoil" ):GetBool() then
+        if IsFirstTimePredicted() and dynamicrecoilCvar:GetBool() then
             owner:SetEyeAngles( eyes )
         end
     end
@@ -658,6 +770,11 @@ function SWEP:Reload()
 
     if self:GetIronsights() then
         self:SetIronsights( false )
+        self:GetOwner():SetFOV( 0, self.IronSightTime )
+        timer.Simple( self.IronSightTime, function()
+            if not IsValid( self ) then return end
+            self:Reload()
+        end )
         return
     end
 
@@ -668,7 +785,7 @@ function SWEP:Reload()
 
     if self:GetOwner():KeyDown( IN_USE ) then return end -- Mode switch
 
-    if self.Silenced then
+    if self.SilencerAttached then
         self:DefaultReload( ACT_VM_RELOAD_SILENCED )
     else
         self:DefaultReload( ACT_VM_RELOAD )
@@ -725,12 +842,12 @@ function SWEP:Silencer()
     self:SetIronsights( false )
     self:SetReloading( true ) -- i know we're not reloading but it works
 
-    if self.Silenced then
+    if self.SilencerAttached then
         self:SendWeaponAnim( ACT_VM_DETACH_SILENCER )
-        self.Silenced = false
-    elseif not self.Silenced then
+        self.SilencerAttached = false
+    elseif not self.SilencerAttached then
         self:SendWeaponAnim( ACT_VM_ATTACH_SILENCER )
-        self.Silenced = true
+        self.SilencerAttached = true
     end
 
     local siltimer = CurTime() + self:GetOwner():GetViewModel():SequenceDuration() + 0.1
@@ -797,7 +914,7 @@ function SWEP:IronSight()
     if not owner:IsNPC() and selfTbl.ResetSights and CurTime() >= selfTbl.ResetSights then
         selfTbl.ResetSights = nil
 
-        if selfTbl.Silenced then
+        if selfTbl.SilencerAttached then
             self:SendWeaponAnim( ACT_VM_IDLE_SILENCED )
         else
             self:SendWeaponAnim( ACT_VM_IDLE )
@@ -860,7 +977,7 @@ function SWEP:IronSight()
         selfTbl.BobScale  = 1.0
     end
 
-    if ( not CLIENT ) or ( not IsFirstTimePredicted() and not game.SinglePlayer() ) then return end
+    if ( not CLIENT ) or ( not IsFirstTimePredicted() and not IS_SINGLEPLAYER ) then return end
     self.bIron = self:GetIronsightsActive()
     self.fIronTime = self:GetIronsightsTime()
     self.CurrentTime = CurTime()

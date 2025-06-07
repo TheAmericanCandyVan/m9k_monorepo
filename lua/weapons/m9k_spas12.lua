@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_spas12") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_spas12" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category                = "M9K Shotguns"
 SWEP.Author                = ""
@@ -28,7 +28,7 @@ SWEP.Base                 = "bobs_shotty_base"
 SWEP.Spawnable                = true
 SWEP.AdminSpawnable            = true
 
-SWEP.Primary.Sound            = Sound("spas_12_shoty.Single")        -- script that calls the primary fire sound
+SWEP.Primary.Sound            = "spas_12_shoty.Single"        -- script that calls the primary fire sound
 SWEP.Primary.RPM                = 350        -- This is in Rounds Per Minute
 SWEP.Primary.ClipSize            = 8            -- Size of a clip
 SWEP.Primary.DefaultClip        = 30    -- Default number of bullets in a clip

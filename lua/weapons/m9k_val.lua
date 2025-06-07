@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_val") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_val" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category                = "M9K Assault Rifles"
 SWEP.Author                = "iron angles and models hexed and converted to gmod my Mr Fokkusu"
@@ -29,7 +29,7 @@ SWEP.Spawnable                = true
 SWEP.AdminSpawnable            = true
 SWEP.FiresUnderwater = false
 
-SWEP.Primary.Sound            = Sound("Dmgfok_vally.Single")        -- Script that calls the primary fire sound
+SWEP.Primary.Sound            = "Dmgfok_vally.Single"        -- Script that calls the primary fire sound
 SWEP.Primary.RPM            = 900            -- This is in Rounds Per Minute
 SWEP.Primary.ClipSize            = 20        -- Size of a clip
 SWEP.Primary.DefaultClip        = 60        -- Bullets you start with
@@ -54,3 +54,4 @@ SWEP.SightsPos = Vector (-2.22, -2, 1.01)
 SWEP.SightsAng = Vector (1.0513, 0.0322, 0)
 SWEP.RunSightsPos = Vector (0.3339, -2.043, 0.6273)
 SWEP.RunSightsAng = Vector (-11.5931, 48.4648, -19.7039)
+SWEP.HasBuiltInSilencer = true

@@ -40,7 +40,7 @@ SWEP.Primary.Ammo           = "Nuclear_Warhead"
 -- pistol, 357, smg1, ar2, buckshot, slam, SniperPenetratedRound, AirboatGun
 -- Pistol, buckshot, and slam always ricochet. Use AirboatGun for a metal piercing shotgun slug
 
-SWEP.Primary.Round          = ("m9k_launched_davycrockett") --NAME OF ENTITY GOES HERE
+SWEP.Primary.Round          = "m9k_launched_davycrockett" --NAME OF ENTITY GOES HERE
 
 SWEP.Secondary.IronFOV      = 40 -- How much you 'zoom' in. Less is more!
 
@@ -144,7 +144,7 @@ end
 
 function SWEP:FireRocket()
     local aim = self:GetOwner():GetAimVector()
-    local pos = self:GetOwner():GetShootPos()
+    local pos = self:GetOwner():M9K_GetShootPos()
 
     if SERVER then
         local rocket = ents.Create( self.Primary.Round )

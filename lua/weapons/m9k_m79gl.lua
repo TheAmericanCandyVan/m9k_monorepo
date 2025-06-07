@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_m79gl") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_m79gl" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category               = "M9K Specialties"
 SWEP.Author                 = ""
@@ -42,7 +42,7 @@ SWEP.Primary.Automatic      = false -- Automatic = true; Semi Auto = false
 SWEP.Primary.Ammo           = "40mmGrenade"
 
 SWEP.Secondary.IronFOV      = 60 -- How much you 'zoom' in. Less is more!
-SWEP.Primary.Round          = ("m9k_launched_m79") --NAME OF ENTITY GOES HERE
+SWEP.Primary.Round          = "m9k_launched_m79" --NAME OF ENTITY GOES HERE
 SWEP.data                   = {} --The starting firemode
 SWEP.data.ironsights        = 1
 
@@ -106,7 +106,7 @@ function SWEP:FireRocket()
     local aim = self:GetOwner():GetAimVector()
     local side = aim:Cross( Vector( 0, 0, 1 ) )
     local up = side:Cross( aim )
-    local pos = self:GetOwner():GetShootPos() + side * 6 + up * -5
+    local pos = self:GetOwner():M9K_GetShootPos() + side * 6 + up * -5
 
     if SERVER then
         local rocket = ents.Create( self.Primary.Round )

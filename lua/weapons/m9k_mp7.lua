@@ -1,5 +1,5 @@
 -- Variables that are used on both client and server
-SWEP.Gun = ("m9k_mp7") -- must be the name of your swep but NO CAPITALS!
+SWEP.Gun = "m9k_mp7" -- must be the name of your swep but NO CAPITALS!
 
 SWEP.Category                 = "M9K Submachine Guns"
 SWEP.Author                   = ""
@@ -65,3 +65,4 @@ SWEP.SightsPos                = Vector( 3, -5, 1.5 )
 SWEP.SightsAng                = Vector( 0, 0, 0 )
 SWEP.RunSightsPos             = Vector( -3.1731, -5.3573, 1.4608 )
 SWEP.RunSightsAng             = Vector( -18.7139, -48.1596, 0 )
+SWEP.HasBuiltInSilencer = true
