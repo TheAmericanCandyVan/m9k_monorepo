@@ -7,20 +7,20 @@ SWEP.Contact                = ""
 SWEP.Purpose                = ""
 SWEP.Instructions           = "Left click to slash" .. "\n" .. "Hold right mouse to put up guard."
 SWEP.PrintName              = "Damascus Sword" -- Weapon name (Shown on HUD)
-SWEP.Slot                   = 0 -- Slot in the weapon selection menu
-SWEP.SlotPos                = 21 -- Position in the slot
+SWEP.Slot                   = 0
+SWEP.SlotPos                = 21
 SWEP.DrawAmmo               = true -- Should draw the default HL2 ammo counter
 SWEP.DrawCrosshair          = false -- set false if you want no crosshair
-SWEP.Weight                 = 30 -- rank relative to other weapons. bigger is better
-SWEP.AutoSwitchTo           = true -- Auto switch to if we pick it up
-SWEP.AutoSwitchFrom         = true -- Auto switch from if you pick up a better weapon
-SWEP.HoldType               = "melee2" -- how others view you carrying the weapon
--- normal melee melee2 fist knife smg ar2 pistol rpg physgun grenade shotgun crossbow slam passive
+SWEP.Weight                 = 30
+SWEP.AutoSwitchTo           = true
+SWEP.AutoSwitchFrom         = true
+SWEP.HoldType               = "melee2"
+
 
 SWEP.ViewModelFOV           = 70
 SWEP.ViewModelFlip          = false
-SWEP.ViewModel              = "models/weapons/v_dmascus.mdl" -- Weapon view model
-SWEP.WorldModel             = "models/weapons/w_damascus_sword.mdl" -- Weapon world model
+SWEP.ViewModel              = "models/weapons/v_dmascus.mdl"
+SWEP.WorldModel             = "models/weapons/w_damascus_sword.mdl"
 SWEP.ShowWorldModel         = true
 SWEP.Base                   = "bobs_gun_base"
 SWEP.Spawnable              = true
@@ -28,8 +28,8 @@ SWEP.AdminSpawnable         = true
 SWEP.FiresUnderwater        = false
 
 SWEP.Primary.RPM            = 150 -- This is in Rounds Per Minute
-SWEP.Primary.ClipSize       = 30 -- Size of a clip
-SWEP.Primary.DefaultClip    = 60 -- Bullets you start with
+SWEP.Primary.ClipSize       = 30
+SWEP.Primary.DefaultClip    = 60
 SWEP.Primary.KickUp         = 0.4 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown       = 0.3 -- Maximum down recoil (skeet)
 SWEP.Primary.KickHorizontal = 0.3 -- Maximum up recoil (stock)
@@ -54,20 +54,20 @@ SWEP.RunSightsAng           = Vector( -25.577, 0, 0 )
 
 SWEP.Slash                  = 1
 
-SWEP.Primary.Sound          = "weapons/blades/woosh.mp3" --woosh
-SWEP.KnifeShink             = "weapons/blades/hitwall.mp3"
-SWEP.KnifeSlash             = "weapons/blades/slash.mp3"
-SWEP.KnifeStab              = "weapons/blades/nastystab.mp3"
+SWEP.Primary.Sound          = "weapons/blades/woosh.ogg" --woosh
+SWEP.KnifeShink             = "weapons/blades/hitwall.ogg"
+SWEP.KnifeSlash             = "weapons/blades/slash.ogg"
+SWEP.KnifeStab              = "weapons/blades/nastystab.ogg"
 
-SWEP.SwordChop              = "weapons/blades/swordchop.mp3"
-SWEP.SwordClash             = "weapons/blades/clash.mp3"
-
+SWEP.SwordChop              = "weapons/blades/swordchop.ogg"
+SWEP.SwordClash             = "weapons/blades/clash.ogg"
 
 function SWEP:PrimaryAttack()
-    if not self:GetOwner():IsPlayer() then return end
+    local owner = self:GetOwner()
+
+    if not owner:IsPlayer() then return end
     if not self:CanPrimaryAttack() then return end
 
-    local owner = self:GetOwner()
     local pos = owner:M9K_GetShootPos()
     local ang = owner:GetAimVector()
     local vm = owner:GetViewModel()
@@ -96,9 +96,9 @@ function SWEP:PrimaryAttack()
             mins = Vector( -15, -5, 0 ),
             maxs = Vector( 15, 5, 5 )
         }
-        self:GetOwner():LagCompensation( true )
+        owner:LagCompensation( true )
         local slashtrace = util.TraceHull( slash )
-        self:GetOwner():LagCompensation( false )
+        owner:LagCompensation( false )
 
         if slashtrace.Hit then
             targ = slashtrace.Entity
@@ -140,9 +140,11 @@ function SWEP:Holster()
 end
 
 function SWEP:IronSight()
-    if not self:GetOwner():IsNPC() then
-        if self:GetOwner():GetNWBool( "GuardIsUp" ) == nil then
-            self:GetOwner():SetNWBool( "GuardIsUp", false )
+    local owner = self:GetOwner()
+
+    if not owner:IsNPC() then
+        if owner:GetNWBool( "GuardIsUp" ) == nil then
+            owner:SetNWBool( "GuardIsUp", false )
         end
 
         if self.ResetSights and CurTime() >= self.ResetSights then
@@ -151,28 +153,28 @@ function SWEP:IronSight()
         end
     end
 
-    if not self:GetOwner():KeyDown( IN_USE ) and self:GetOwner():KeyPressed( IN_ATTACK2 ) and not (self:GetReloading()) then
-        self:GetOwner():SetFOV( self.Secondary.IronFOV, 0.3 )
+    if not owner:KeyDown( IN_USE ) and owner:KeyPressed( IN_ATTACK2 ) and not (self:GetReloading()) then
+        owner:SetFOV( self.Secondary.IronFOV, 0.3 )
         self.IronSightsPos = self.SightsPos -- Bring it up
         self.IronSightsAng = self.SightsAng -- Bring it up
         self:SetIronsights( true )
         self.DrawCrosshair = false
-        self:GetOwner():SetNWBool( "GuardIsUp", true )
+        owner:SetNWBool( "GuardIsUp", true )
 
         if CLIENT then return end
     end
 
-    if self:GetOwner():KeyReleased( IN_ATTACK2 ) and not self:GetOwner():KeyDown( IN_USE ) then
+    if owner:KeyReleased( IN_ATTACK2 ) and not owner:KeyDown( IN_USE ) then
         -- If the right click is released, then
-        self:GetOwner():SetFOV( 0, 0.3 )
+        owner:SetFOV( 0, 0.3 )
         self.DrawCrosshair = true
         self:SetIronsights( false )
-        self:GetOwner():SetNWBool( "GuardIsUp", false )
+        owner:SetNWBool( "GuardIsUp", false )
 
         if CLIENT then return end
     end
 
-    if self:GetOwner():KeyDown( IN_ATTACK2 ) and not self:GetOwner():KeyDown( IN_USE ) then
+    if owner:KeyDown( IN_ATTACK2 ) and not owner:KeyDown( IN_USE ) then
         self.SwayScale = 0.05
         self.BobScale  = 0.05
     else

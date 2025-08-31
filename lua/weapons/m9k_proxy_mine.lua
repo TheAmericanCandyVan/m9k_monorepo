@@ -9,30 +9,30 @@ SWEP.Instructions           = ""
 SWEP.MuzzleAttachment       = "1" -- Should be "1" for CSS models or "muzzle" for hl2 models
 SWEP.ShellEjectAttachment   = "2" -- Should be "2" for CSS models or "1" for hl2 models
 SWEP.PrintName              = "Prox Mine" -- Weapon name (Shown on HUD)
-SWEP.Slot                   = 4 -- Slot in the weapon selection menu
-SWEP.SlotPos                = 26 -- Position in the slot
+SWEP.Slot                   = 4
+SWEP.SlotPos                = 26
 SWEP.DrawAmmo               = true -- Should draw the default HL2 ammo counter
 SWEP.DrawCrosshair          = false -- set false if you want no crosshair
-SWEP.Weight                 = 2 -- rank relative to other weapons. bigger is better
-SWEP.AutoSwitchTo           = true -- Auto switch to if we pick it up
-SWEP.AutoSwitchFrom         = true -- Auto switch from if you pick up a better weapon
-SWEP.HoldType               = "slam" -- how others view you carrying the weapon
--- normal melee melee2 fist knife smg ar2 pistol rpg physgun grenade shotgun crossbow slam passive
--- you're mostly going to use ar2, smg, shotgun or pistol. rpg and ar2 make for good sniper rifles
+SWEP.Weight                 = 2
+SWEP.AutoSwitchTo           = true
+SWEP.AutoSwitchFrom         = true
+SWEP.HoldType               = "slam"
+
+
 
 SWEP.ViewModelFOV           = 70
 SWEP.ViewModelFlip          = false
-SWEP.ViewModel              = "models/weapons/v_px.mdl" -- Weapon view model
-SWEP.WorldModel             = "models/weapons/w_px.mdl" -- Weapon world model
+SWEP.ViewModel              = "models/weapons/v_px.mdl"
+SWEP.WorldModel             = "models/weapons/w_px.mdl"
 SWEP.Base                   = "bobs_gun_base"
 SWEP.Spawnable              = true
 SWEP.AdminSpawnable         = true
 SWEP.FiresUnderwater        = true
 
-SWEP.Primary.Sound          = "" -- Script that calls the primary fire sound
+SWEP.Primary.Sound          = ""
 SWEP.Primary.RPM            = 10 -- This is in Rounds Per Minute
-SWEP.Primary.ClipSize       = 1 -- Size of a clip
-SWEP.Primary.DefaultClip    = 1 -- Bullets you start with
+SWEP.Primary.ClipSize       = 1
+SWEP.Primary.DefaultClip    = 1
 SWEP.Primary.KickUp         = 0 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown       = 0 -- Maximum down recoil (skeet)
 SWEP.Primary.KickHorizontal = 0 -- Maximum up recoil (stock)
@@ -64,21 +64,23 @@ SWEP.RunSightsAng           = Vector( 0, 0, 0 )
 
 function SWEP:PrimaryAttack()
     if self:CanPrimaryAttack() then
+        local owner = self:GetOwner()
+
         self:SendWeaponAnim( ACT_VM_PRIMARYATTACK )
         self:SetNextPrimaryFire( CurTime() + 1 / (self.Primary.RPM / 60) )
-        local plant = self:GetOwner():GetViewModel():SequenceDuration()
+        local plant = owner:GetViewModel():SequenceDuration()
         timer.Simple( plant, function()
             if not IsValid( self ) then return end
-            if not IsValid( self:GetOwner() ) then return end
+            if not IsValid( owner ) then return end
 
-            local activeWeapon = self:GetOwner():GetActiveWeapon()
+            local activeWeapon = owner:GetActiveWeapon()
             if activeWeapon ~= self then return end
 
             self:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
             local tr = {}
-            tr.start = self:GetOwner():M9K_GetShootPos()
-            tr.endpos = self:GetOwner():M9K_GetShootPos() + 100 * self:GetOwner():GetAimVector()
-            tr.filter = { self:GetOwner() }
+            tr.start = owner:M9K_GetShootPos()
+            tr.endpos = owner:M9K_GetShootPos() + 100 * owner:GetAimVector()
+            tr.filter = { owner }
             local trace = util.TraceLine( tr )
             self:TakePrimaryAmmo( 1 )
             if (CLIENT) then return end
@@ -86,7 +88,7 @@ function SWEP:PrimaryAttack()
             proxy:SetPos( trace.HitPos + trace.HitNormal )
             trace.HitNormal.z = -trace.HitNormal.z
             proxy:SetAngles( trace.HitNormal:Angle() - Angle( 90, 180, 0 ) )
-            proxy.ProxyBombOwner = self:GetOwner()
+            proxy.ProxyBombOwner = owner
             proxy:Spawn()
 
             local boxes
@@ -109,7 +111,7 @@ function SWEP:PrimaryAttack()
             parentme[16] = "m9k_ammo_winchester"
 
             if trace.Entity ~= nil and trace.Entity:IsValid() then
-                for k, v in pairs( parentme ) do
+                for k, v in ipairs( parentme ) do
                     if trace.Entity:GetClass() == v then
                         boxes = trace.Entity
                     end

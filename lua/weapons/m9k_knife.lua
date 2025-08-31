@@ -7,21 +7,21 @@ SWEP.Contact                = ""
 SWEP.Purpose                = ""
 SWEP.Instructions           = ("Left click to slash" .. "\n" .. "Right click to stab.")
 SWEP.PrintName              = "Knife" -- Weapon name (Shown on HUD)
-SWEP.Slot                   = 0 -- Slot in the weapon selection menu
-SWEP.SlotPos                = 24 -- Position in the slot
+SWEP.Slot                   = 0
+SWEP.SlotPos                = 24
 SWEP.DrawAmmo               = true -- Should draw the default HL2 ammo counter
 SWEP.DrawCrosshair          = false -- set false if you want no crosshair
-SWEP.Weight                 = 30 -- rank relative to other weapons. bigger is better
-SWEP.AutoSwitchTo           = true -- Auto switch to if we pick it up
-SWEP.AutoSwitchFrom         = true -- Auto switch from if you pick up a better weapon
-SWEP.HoldType               = "knife" -- how others view you carrying the weapon
--- normal melee melee2 fist knife smg ar2 pistol rpg physgun grenade shotgun crossbow slam passive
--- you're mostly going to use ar2, smg, shotgun or pistol. rpg and crossbow make for good sniper rifles
+SWEP.Weight                 = 30
+SWEP.AutoSwitchTo           = true
+SWEP.AutoSwitchFrom         = true
+SWEP.HoldType               = "knife"
+
+
 
 SWEP.ViewModelFOV           = 70
 SWEP.ViewModelFlip          = false
-SWEP.ViewModel              = "models/weapons/v_knife_x.mdl" -- Weapon view model
-SWEP.WorldModel             = "models/weapons/w_extreme_ratio.mdl" -- Weapon world model
+SWEP.ViewModel              = "models/weapons/v_knife_x.mdl"
+SWEP.WorldModel             = "models/weapons/w_extreme_ratio.mdl"
 SWEP.ShowWorldModel         = true
 SWEP.Base                   = "bobs_gun_base"
 SWEP.Spawnable              = true
@@ -29,8 +29,8 @@ SWEP.AdminSpawnable         = true
 SWEP.FiresUnderwater        = false
 
 SWEP.Primary.RPM            = 180 -- This is in Rounds Per Minute
-SWEP.Primary.ClipSize       = 30 -- Size of a clip
-SWEP.Primary.DefaultClip    = 60 -- Bullets you start with
+SWEP.Primary.ClipSize       = 30
+SWEP.Primary.DefaultClip    = 60
 SWEP.Primary.KickUp         = 0.4 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown       = 0.3 -- Maximum down recoil (skeet)
 SWEP.Primary.KickHorizontal = 0.3 -- Maximum up recoil (stock)
@@ -45,16 +45,16 @@ SWEP.MaxBox = Vector( 10, 5, 5 )
 
 SWEP.Slash = 1
 
-SWEP.Primary.Sound = "weapons/blades/woosh.mp3"
-SWEP.KnifeShink = "weapons/blades/hitwall.mp3"
-SWEP.KnifeSlash = "weapons/blades/slash.mp3"
-SWEP.KnifeStab = "weapons/blades/nastystab.mp3"
+SWEP.Primary.Sound = "weapons/blades/woosh.ogg"
+SWEP.KnifeShink = "weapons/blades/hitwall.ogg"
+SWEP.KnifeSlash = "weapons/blades/slash.ogg"
+SWEP.KnifeStab = "weapons/blades/nastystab.ogg"
 
 function SWEP:Deploy()
     self:SetHoldType( self.HoldType )
     self:SendWeaponAnim( ACT_VM_DRAW )
     self:SetNextPrimaryFire( CurTime() + 1 )
-    self:EmitSound( "weapons/knife/knife_draw_x.mp3", 50, 100 )
+    self:EmitSound( "weapons/knife/knife_draw_x.ogg", 50, 100 )
     return true
 end
 
@@ -85,9 +85,9 @@ function SWEP:SlashTrace()
         filter = owner,
     }
 
-    self:GetOwner():LagCompensation( true )
+    owner:LagCompensation( true )
     local slashtrace = util.TraceHull( trace )
-    self:GetOwner():LagCompensation( false )
+    owner:LagCompensation( false )
 
     if IsValid( slashtrace.Entity ) and self:IsBackStab( slashtrace.Entity ) then
         slashtrace.BackStab = true
@@ -113,6 +113,9 @@ function SWEP:Think()
         if slashtrace.Hit then
             self.ShouldAttack = false
             local targ = slashtrace.Entity
+
+            local owner = self:GetOwner()
+
             if targ:IsPlayer() or targ:IsNPC() then
                 local damagedice = math.Rand( 0.98, 1.02 )
                 local pain = self.AttackDamage * damagedice
@@ -130,14 +133,14 @@ function SWEP:Think()
                     local paininfo = DamageInfo()
                     paininfo:SetDamage( pain )
                     paininfo:SetDamageType( DMG_SLASH )
-                    paininfo:SetAttacker( self:GetOwner() )
+                    paininfo:SetAttacker( owner )
                     paininfo:SetInflictor( self )
                     paininfo:SetDamageForce( slashtrace.Normal * 20000 )
                     targ:TakeDamageInfo( paininfo )
                 end
             else
                 self:EmitSound( self.KnifeShink )
-                look = self:GetOwner():GetEyeTrace()
+                look = owner:GetEyeTrace()
                 util.Decal( "ManhackCut", look.HitPos + look.HitNormal, look.HitPos - look.HitNormal )
             end
         end
@@ -161,7 +164,9 @@ function SWEP:PrimaryAttack()
         self.Slash = self.Slash == 1 and 2 or 1
     end
 
-    local vm = self:GetOwner():GetViewModel()
+    local owner = self:GetOwner()
+
+    local vm = owner:GetViewModel()
     self:SendWeaponAnim( ACT_VM_IDLE )
     if self.Slash == 1 then
         vm:SetSequence( vm:LookupSequence( "midslash1" ) )
@@ -170,7 +175,7 @@ function SWEP:PrimaryAttack()
     end
 
     self:EmitSound( self.Primary.Sound )
-    self:GetOwner():SetAnimation( PLAYER_ATTACK1 )
+    owner:SetAnimation( PLAYER_ATTACK1 )
 
     self:StartAttack( 0.05, 0.15, self.PrimaryDamage, self.KnifeSlash, self.KnifeSlash )
 end
@@ -201,19 +206,21 @@ function SWEP:ThrowKnife()
     if IsFirstTimePredicted() then
         self:EmitSound( self.Primary.Sound )
         if SERVER then
+            local owner = self:GetOwner()
+
             local knife = ents.Create( "m9k_thrown_spec_knife" )
-            knife:SetAngles( self:GetOwner():EyeAngles() )
-            knife:SetPos( self:GetOwner():M9K_GetShootPos() )
-            knife:SetOwner( self:GetOwner() )
-            knife:SetPhysicsAttacker( self:GetOwner() )
+            knife:SetAngles( owner:EyeAngles() )
+            knife:SetPos( owner:M9K_GetShootPos() )
+            knife:SetOwner( owner )
+            knife:SetPhysicsAttacker( owner )
             knife:Spawn()
             knife:Activate()
-            self:GetOwner():SetAnimation( PLAYER_ATTACK1 )
+            owner:SetAnimation( PLAYER_ATTACK1 )
 
             local phys = knife:GetPhysicsObject()
-            phys:SetVelocity( self:GetOwner():GetAimVector() * 1500 )
+            phys:SetVelocity( owner:GetAimVector() * 1500 )
             phys:AddAngleVelocity( Vector( 0, 500, 0 ) )
-            self:GetOwner():StripWeapon( self.Gun )
+            owner:StripWeapon( self.Gun )
         end
     end
 end

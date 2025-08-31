@@ -22,7 +22,7 @@ SWEP.Primary.Cone             = 0.15 -- Accuracy of NPCs
 SWEP.Primary.Damage           = 10
 SWEP.Primary.SpreadHip           = .01 --define from-the-hip accuracy 1 is terrible, .0001 is exact)
 SWEP.Primary.NumShots         = 1
-SWEP.Primary.ClipSize         = 0 -- Size of a clip
+SWEP.Primary.ClipSize         = 0
 SWEP.Primary.DefaultClip      = 0 -- Default number of bullets in a clip
 SWEP.Primary.KickUp           = 0 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown         = 0 -- Maximum down recoil (skeet)
@@ -30,7 +30,7 @@ SWEP.Primary.KickHorizontal   = 0 -- Maximum up recoil (stock)
 SWEP.Primary.Automatic        = true -- Automatic/Semi Auto
 SWEP.Primary.Ammo             = "none" -- What kind of ammo
 
--- SWEP.Secondary.ClipSize            = 0                    -- Size of a clip
+-- SWEP.Secondary.ClipSize            = 0
 -- SWEP.Secondary.DefaultClip            = 0                    -- Default number of bullets in a clip
 -- SWEP.Secondary.Automatic            = false                    -- Automatic/Semi Auto if
 SWEP.Secondary.Ammo           = ""
@@ -57,6 +57,8 @@ SWEP.ReticleScale             = 0.5
 
 local entMeta = FindMetaTable( "Entity" )
 local entity_GetTable = entMeta.GetTable
+local entity_GetOwner = entMeta.GetOwner
+
 function SWEP:Initialize()
     self:SetReloading( false )
     self:SetBoltback( false )
@@ -129,6 +131,8 @@ function SWEP:Initialize()
     end
     self:SetHoldType( self.HoldType )
 
+    local owner = entity_GetOwner(self)
+
     if CLIENT then
         -- -- Create a new table for every weapon instance
         self.VElements = table.FullCopy( self.VElements )
@@ -139,9 +143,9 @@ function SWEP:Initialize()
         self:CreateModels( self.WElements ) -- create worldmodels
 
         -- -- init view model bone build function
-        if IsValid( self:GetOwner() ) and self:GetOwner():IsPlayer() then
-            if self:GetOwner():Alive() then
-                local vm = self:GetOwner():GetViewModel()
+        if IsValid( owner ) and owner:IsPlayer() then
+            if owner:Alive() then
+                local vm = owner:GetViewModel()
                 if IsValid( vm ) then
                     self:ResetBonePositions( vm )
                     -- -- Init viewmodel visibility
@@ -162,24 +166,26 @@ function SWEP:Initialize()
 end
 
 function SWEP:BoltBack()
-    if self:Clip1() > 0 or self:GetOwner():GetAmmoCount( self:GetPrimaryAmmoType() ) > 0 then
+    local owner = entity_GetOwner(self)
+
+    if self:Clip1() > 0 or owner:GetAmmoCount( self:GetPrimaryAmmoType() ) > 0 then
         self:SetBoltback( true )
         timer.Simple( .25, function()
-            if not IsValid( self ) or not IsValid( self:GetOwner() ) then return end
+            if not IsValid( self ) or not IsValid( owner ) then return end
 
             if self:GetClass() ~= self.Gun then return end
             if self:GetIronsights() then
-                self:GetOwner():SetFOV( 0, 0.3 )
+                owner:SetFOV( 0, 0.3 )
                 self:SetIronsights( false )
                 self:SetDrawViewmodel( true )
             end
 
             local boltactiontime = ( 1 / ( self.Primary.RPM / 60 ) )
             timer.Simple( boltactiontime - 0.2, function()
-                if not IsValid( self ) or not IsValid( self:GetOwner() ) then return end
+                if not IsValid( self ) or not IsValid( owner ) then return end
                 self:SetBoltback( false )
-                if self:GetOwner():KeyDown( IN_ATTACK2 ) and not self:GetOwner():KeyDown( IN_SPEED ) and not self:GetReloading() then
-                    self:GetOwner():SetFOV( 75 / self.Secondary.ScopeZoom, 0.15 )
+                if owner:KeyDown( IN_ATTACK2 ) and not owner:KeyDown( IN_SPEED ) and not self:GetReloading() then
+                    owner:SetFOV( 75 / self.Secondary.ScopeZoom, 0.15 )
                     self.IronSightsPos = self.SightsPos -- Bring it up
                     self.IronSightsAng = self.SightsAng -- Bring it up
                     self.DrawCrosshair = false
@@ -192,9 +198,12 @@ function SWEP:BoltBack()
 end
 
 function SWEP:Reload()
-    local owner = self:GetOwner()
+    if self:Clip1() >= self.Primary.ClipSize then return end
+
+    local owner = entity_GetOwner(self)
     if not IsValid( owner ) then return end
 
+    if owner:GetAmmoCount( self:GetPrimaryAmmoType() ) <= 0 then return end
     if owner:KeyDown( IN_USE ) then return end
     if self:GetBoltback() then return end
 
@@ -248,7 +257,7 @@ IronSight
 -----------------------------------------------------------]]
 
 function SWEP:IronSight()
-    local owner = self:GetOwner()
+    local owner = entity_GetOwner(self)
     if not IsValid( owner ) then return end
     local selfTbl = entity_GetTable( self )
     if not owner:IsNPC() and selfTbl.ResetSights and CurTime() >= selfTbl.ResetSights then
@@ -329,12 +338,12 @@ end
 
 function SWEP:SetDrawViewmodel( bool )
     if SERVER then return end
-    local owner = self:GetOwner()
+    local owner = entity_GetOwner(self)
     owner:DrawViewModel( bool )
 end
 
 function SWEP:DrawHUD()
-    local owner = self:GetOwner()
+    local owner = entity_GetOwner(self)
     if not IsValid( owner ) then return end
 
     local selfTable = self:GetTable()
@@ -424,7 +433,7 @@ function SWEP:DrawHUD()
 end
 
 function SWEP:AdjustMouseSensitivity()
-    local owner = self:GetOwner()
+    local owner = entity_GetOwner(self)
     if not IsValid( owner ) then return end
 
     if owner:KeyDown( IN_SPEED ) then return end

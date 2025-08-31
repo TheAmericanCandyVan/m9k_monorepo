@@ -8,27 +8,27 @@ SWEP.Instructions = ""
 SWEP.MuzzleAttachment = "1" -- Should be "1" for CSS models or "muzzle" for hl2 models
 SWEP.ShellEjectAttachment = "2" -- Should be "2" for CSS models or "1" for hl2 models
 SWEP.PrintName = "USAS" -- Weapon name (Shown on HUD)
-SWEP.Slot = 3 -- Slot in the weapon selection menu
-SWEP.SlotPos = 29 -- Position in the slot
+SWEP.Slot = 3
+SWEP.SlotPos = 29
 SWEP.DrawAmmo = true -- Should draw the default HL2 ammo counter
 SWEP.DrawCrosshair = true -- set false if you want no crosshair
-SWEP.Weight = 30 -- rank relative to other weapons. bigger is better
-SWEP.AutoSwitchTo = true -- Auto switch to if we pick it up
-SWEP.AutoSwitchFrom = true -- Auto switch from if you pick up a better weapon
-SWEP.HoldType = "ar2" -- how others view you carrying the weapon
--- normal melee melee2 fist knife smg ar2 pistol rpg physgun grenade shotgun crossbow slam passive
--- you're mostly going to use ar2, smg, shotgun or pistol. rpg and crossbow make for good sniper rifles
+SWEP.Weight = 30
+SWEP.AutoSwitchTo = true
+SWEP.AutoSwitchFrom = true
+SWEP.HoldType = "ar2"
+
+
 SWEP.ViewModelFOV = 70
 SWEP.ViewModelFlip = true
-SWEP.ViewModel = "models/weapons/v_usas12_shot.mdl" -- Weapon view model
-SWEP.WorldModel = "models/weapons/w_usas_12.mdl" -- Weapon world model
+SWEP.ViewModel = "models/weapons/v_usas12_shot.mdl"
+SWEP.WorldModel = "models/weapons/w_usas_12.mdl"
 SWEP.Base = "bobs_gun_base"
 SWEP.Spawnable = true
 SWEP.AdminSpawnable = true
-SWEP.Primary.Sound = "Weapon_usas.Single" -- Script that calls the primary fire sound
+SWEP.Primary.Sound = "Weapon_usas.Single"
 SWEP.Primary.RPM = 260 -- This is in Rounds Per Minute
-SWEP.Primary.ClipSize = 20 -- Size of a clip
-SWEP.Primary.DefaultClip = 60 -- Bullets you start with
+SWEP.Primary.ClipSize = 20
+SWEP.Primary.DefaultClip = 60
 SWEP.Primary.KickUp = 1 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown = 0.4 -- Maximum down recoil (skeet)
 SWEP.Primary.KickHorizontal = 0.7 -- Maximum up recoil (stock)
@@ -81,61 +81,65 @@ SWEP.WElements = {
 }
 
 function SWEP:Reload()
-    if self:Clip1() < self.Primary.ClipSize and self:GetOwner():GetAmmoCount( "buckshot" ) > 0 and not self:GetReloading() then
+    local owner = self:GetOwner()
+
+    if self:Clip1() < self.Primary.ClipSize and owner:GetAmmoCount( "buckshot" ) > 0 and not self:GetReloading() then
         self:SendWeaponAnim( ACT_SHOTGUN_RELOAD_START )
         self:SetReloading( true )
-        self:SetNextPrimaryFire( CurTime() + self:GetOwner():GetViewModel():SequenceDuration() )
+        self:SetNextPrimaryFire( CurTime() + owner:GetViewModel():SequenceDuration() )
 
-        if SERVER and not self:GetOwner():IsNPC() then
+        if SERVER and not owner:IsNPC() then
             self.ResetSights = CurTime() + 1.65
-            self:GetOwner():SetFOV( 0, 0.3 )
+            owner:SetFOV( 0, 0.3 )
             self:SetIronsights( false )
         end
 
         timer.Simple( .65, function()
             if not IsValid( self ) then return end
-            if not IsValid( self:GetOwner() ) then return end
+            if not IsValid( owner ) then return end
             self:EmitSound( "Weapon_usas.draw" )
         end )
 
         timer.Simple( .8, function()
             if not IsValid( self ) then return end
-            if not IsValid( self:GetOwner() ) then return end
+            if not IsValid( owner ) then return end
             self:ReloadFinish()
         end )
     end
 end
 
 function SWEP:ReloadFinish()
+    local owner = self:GetOwner()
+
     self:DefaultReload( ACT_SHOTGUN_RELOAD_FINISH )
-    if not self:GetOwner():IsNPC() then
-        self.ResetSights = CurTime() + self:GetOwner():GetViewModel():SequenceDuration()
+    if not owner:IsNPC() then
+        self.ResetSights = CurTime() + owner:GetViewModel():SequenceDuration()
     end
 
     if not SERVER then return end
 
-    if self:Clip1() < self.Primary.ClipSize and not self:GetOwner():IsNPC() then
-        self:GetOwner():SetFOV( 0, 0.3 )
+    if self:Clip1() < self.Primary.ClipSize and not owner:IsNPC() then
+        owner:SetFOV( 0, 0.3 )
         self:SetIronsights( false )
     end
 
-    local waitdammit = self:GetOwner():GetViewModel():SequenceDuration()
+    local waitdammit = owner:GetViewModel():SequenceDuration()
     timer.Simple( waitdammit + .1, function()
         if not IsValid( self ) then return end
-        if not IsValid( self:GetOwner() ) then return end
+        if not IsValid( owner ) then return end
         self:SetReloading( false )
-        if self:GetOwner():KeyDown( IN_ATTACK2 ) and self.Scoped == false then
-            self:GetOwner():SetFOV( self.Secondary.IronFOV, 0.3 )
+        if owner:KeyDown( IN_ATTACK2 ) and self.Scoped == false then
+            owner:SetFOV( self.Secondary.IronFOV, 0.3 )
             self.IronSightsPos = self.SightsPos
             self.IronSightsAng = self.SightsAng
-            self:SetIronsights( true, self:GetOwner() )
+            self:SetIronsights( true, owner )
             self.DrawCrosshair = false
-        elseif self:GetOwner():KeyDown( IN_SPEED ) then
+        elseif owner:KeyDown( IN_SPEED ) then
             self:SetNextPrimaryFire( CurTime() + 0.3 )
             self.IronSightsPos = self.RunSightsPos
             self.IronSightsAng = self.RunSightsAng
             self:SetIronsights( true )
-            self:GetOwner():SetFOV( 0, 0.3 )
+            owner:SetFOV( 0, 0.3 )
         end
     end )
 end

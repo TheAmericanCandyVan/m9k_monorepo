@@ -9,28 +9,28 @@ SWEP.Instructions             = ""
 SWEP.MuzzleAttachment         = "1" -- Should be "1" for CSS models or "muzzle" for hl2 models
 SWEP.ShellEjectAttachment     = "2" -- Should be "2" for CSS models or "1" for hl2 models
 SWEP.PrintName                = "Orbital Strike Marker" -- Weapon name (Shown on HUD)
-SWEP.Slot                     = 4 -- Slot in the weapon selection menu
-SWEP.SlotPos                  = 35 -- Position in the slot
+SWEP.Slot                     = 4
+SWEP.SlotPos                  = 35
 SWEP.DrawAmmo                 = true -- Should draw the default HL2 ammo counter
-SWEP.DrawCrosshair            = false -- Set false if you want no crosshair from hip
-SWEP.Weight                   = 50 -- rank relative to other weapons. bigger is better
-SWEP.AutoSwitchTo             = true -- Auto switch to if we pick it up
-SWEP.AutoSwitchFrom           = true -- Auto switch from if you pick up a better weapon
+SWEP.DrawCrosshair            = false
+SWEP.Weight                   = 50
+SWEP.AutoSwitchTo             = true
+SWEP.AutoSwitchFrom           = true
 SWEP.XHair                    = false -- Used for returning crosshair after scope. Must be the same as DrawCrosshair
 SWEP.HoldType                 = "camera"
 
 SWEP.ViewModelFOV             = 70
 SWEP.ViewModelFlip            = false
-SWEP.ViewModel                = "models/weapons/v_invisib.mdl" -- Weapon view model
-SWEP.WorldModel               = "models/weapons/w_binos.mdl" -- Weapon world model
+SWEP.ViewModel                = "models/weapons/v_invisib.mdl"
+SWEP.WorldModel               = "models/weapons/w_binos.mdl"
 SWEP.Base                     = "bobs_scoped_base"
 SWEP.Spawnable                = true
 SWEP.AdminSpawnable           = true
 
-SWEP.Primary.Sound            = "weapons/satellite/targaquired.mp3" -- script that calls the primary fire sound
+SWEP.Primary.Sound            = "weapons/satellite/targaquired.ogg"
 SWEP.Primary.RPM              = 50 -- This is in Rounds Per Minute
-SWEP.Primary.ClipSize         = 1 -- Size of a clip
-SWEP.Primary.DefaultClip      = 1 -- Bullets you start with
+SWEP.Primary.ClipSize         = 1
+SWEP.Primary.DefaultClip      = 1
 SWEP.Primary.KickUp           = 1 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown         = 1 -- Maximum down recoil (skeet)
 SWEP.Primary.KickHorizontal   = 1 -- Maximum up recoil (stock)
@@ -85,11 +85,14 @@ SWEP.NextShoot                = 0
 function SWEP:PrimaryAttack()
     self.PoorBastard = false
     if not IsFirstTimePredicted() then return end
-    if self:CanPrimaryAttack() and self:GetOwner():IsPlayer() and self.NextShoot <= CurTime() then
-        if not self:GetOwner():KeyDown( IN_SPEED ) and not self:GetOwner():KeyDown( IN_RELOAD ) then
-            local mark = self:GetOwner():GetEyeTrace()
+
+    local owner = self:GetOwner()
+
+    if self:CanPrimaryAttack() and owner:IsPlayer() and self.NextShoot <= CurTime() then
+        if not owner:KeyDown( IN_SPEED ) and not owner:KeyDown( IN_RELOAD ) then
+            local mark = owner:GetEyeTrace()
             if mark.HitSky then
-                self:GetOwner():EmitSound( "player/suit_denydevice.wav" )
+                owner:EmitSound( "player/suit_denydevice.wav" )
             end
 
             local skytrace = {}
@@ -103,11 +106,11 @@ function SWEP:PrimaryAttack()
                     local Satellite = ents.Create( "m9k_oribital_cannon" )
                     Satellite.Ground = Ground
                     Satellite.Sky = Sky
-                    Satellite.Owner = self:GetOwner()
+                    Satellite.Owner = owner
                     Satellite:SetPos( Sky ) --was sky but for testing, its this
                     Satellite:Spawn()
                 end
-                if SERVER then self:GetOwner():EmitSound( self.Primary.Sound ) end
+                if SERVER then owner:EmitSound( self.Primary.Sound ) end
                 self:TakePrimaryAmmo( 1 )
                 self:SetNextPrimaryFire( CurTime() + 15 )
                 self.NextShoot = CurTime() + 15
@@ -129,21 +132,21 @@ function SWEP:PrimaryAttack()
                         Satellite.PoorBastard = true
                         Satellite.Target = thetarget
                         Satellite.Sky = sky2
-                        Satellite.Owner = self:GetOwner()
+                        Satellite.Owner = owner
                         Satellite:SetPos( sky2 )
                         Satellite:Spawn()
                     end
-                    self:GetOwner():EmitSound( self.Primary.Sound )
+                    owner:EmitSound( self.Primary.Sound )
                     self:TakePrimaryAmmo( 1 )
                     self:SetNextPrimaryFire( CurTime() + 15 )
                     self.NextShoot = CurTime() + 15
                     self:CheckWeaponsAndAmmo()
                     self:Reload()
                 else
-                    self:GetOwner():EmitSound( "player/suit_denydevice.wav" )
+                    owner:EmitSound( "player/suit_denydevice.wav" )
                 end
             else
-                self:GetOwner():EmitSound( "player/suit_denydevice.wav" )
+                owner:EmitSound( "player/suit_denydevice.wav" )
             end
         end
     end
