@@ -103,6 +103,10 @@ function SWEP:Reload()
 
     local owner = self:GetOwner()
 
+    if owner:GetAmmoCount( self:GetPrimaryAmmoType() ) <= 0 then
+        return
+    end
+
     if not owner:IsNPC() then
         self.ResetSights = CurTime() + owner:GetViewModel():SequenceDuration()
     end
