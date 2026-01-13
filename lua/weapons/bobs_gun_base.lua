@@ -14,7 +14,7 @@ SWEP.Spawnable              = false
 SWEP.AdminSpawnable         = false
 
 SWEP.Primary.Sound          = "" -- Sound of the gun
-SWEP.Primary.Round          = "" -- What kind of bullet?
+SWEP.Primary.Round = "" -- What kind of bullet?
 SWEP.Primary.Cone           = 0.2 -- Accuracy of NPCs
 SWEP.Primary.Damage         = 10
 SWEP.Primary.SpreadHip         = .01 --define from-the-hip accuracy (1 is terrible, .0001 is exact)
@@ -213,6 +213,8 @@ function SWEP:OnRemove()
         local vm = owner:GetViewModel()
         if IsValid( vm ) then
             self:ResetBonePositions( vm )
+            self:ClearModels( self.VElements )
+            self:ClearModels( self.WElements )
         end
     end
 end
@@ -516,6 +518,11 @@ cvars.AddChangeCallback( "M9KDisablePenetration", function( _, _, new )
     disablepen = tobool( new )
 end )
 
+local disablericochet = GetConVar( "M9KDisableRicochet" ):GetBool()
+cvars.AddChangeCallback( "M9KDisableRicochet", function( _, _, new )
+    disablericochet = tobool( new )
+end )
+
 function SWEP:BulletCallback( iteration, attacker, bulletTrace, dmginfo, direction )
     if CLIENT then return end
     if bulletTrace.HitSky then return end
@@ -531,8 +538,10 @@ function SWEP:BulletCallback( iteration, attacker, bulletTrace, dmginfo, directi
         if penetrated then return end
     end
 
-    local ricochet = self:BulletRicochet( iteration, attacker, bulletTrace, dmginfo, direction )
-    if ricochet then return end
+    if not disablericochet then
+        local ricochet = self:BulletRicochet( iteration, attacker, bulletTrace, dmginfo, direction )
+        if ricochet then return end
+    end
 end
 
 function SWEP:BulletPenetrate( iteration, attacker, bulletTrace, dmginfo, direction )
@@ -1388,6 +1397,17 @@ if CLIENT then
                 end
                 v.createdSprite = v.sprite
                 v.spriteMaterial = CreateMaterial( name, "UnlitGeneric", params )
+            end
+        end
+    end
+
+    function SWEP:ClearModels( tab )
+        if not tab then return end
+
+        for _, v in pairs( tab ) do
+            if v.type == "Model" and IsValid( v.modelEnt ) then
+                v.modelEnt:Remove()
+                v.modelEnt = nil
             end
         end
     end
