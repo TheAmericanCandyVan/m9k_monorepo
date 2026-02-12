@@ -184,7 +184,7 @@ function SWEP:BoltBack()
             timer.Simple( boltactiontime - 0.2, function()
                 if not IsValid( self ) or not IsValid( owner ) then return end
                 self:SetBoltback( false )
-                if owner:KeyDown( IN_ATTACK2 ) and not owner:KeyDown( IN_SPEED ) and not self:GetReloading() then
+                if owner:KeyDown( IN_ATTACK2 ) and not self:IsRunning() and not self:GetReloading() then
                     owner:SetFOV( 75 / self.Secondary.ScopeZoom, 0.15 )
                     self.IronSightsPos = self.SightsPos -- Bring it up
                     self.IronSightsAng = self.SightsAng -- Bring it up
@@ -233,6 +233,20 @@ function SWEP:Reload()
         if not IsValid( self ) or not IsValid( owner ) then return end
 
         self:SetReloading( false )
+        
+        if self:IsRunning() then
+            if self:GetNextPrimaryFire() <= ( CurTime() + 0.3 ) then
+                self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
+            end
+            self.IronSightsPos = self.RunSightsPos -- Hold it down
+            self.IronSightsAng = self.RunSightsAng -- Hold it down
+            self:SetIronsights( false )
+            self:SetDrawViewmodel( true )
+            owner:SetFOV( 0, 0.2 )
+
+            return
+        end
+        
         if owner:KeyDown( IN_ATTACK2 ) then
             owner:SetFOV( 75 / self.Secondary.ScopeZoom, 0.15 )
             self.IronSightsPos = self.SightsPos -- Bring it up
@@ -240,14 +254,6 @@ function SWEP:Reload()
             self.DrawCrosshair = false
             self:SetIronsights( true )
             self:SetDrawViewmodel( false )
-        elseif owner:KeyDown( IN_SPEED ) then
-            if self:GetNextPrimaryFire() <= ( CurTime() + 0.3 ) then
-                self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
-            end
-            self.IronSightsPos = self.RunSightsPos -- Hold it down
-            self.IronSightsAng = self.RunSightsAng -- Hold it down
-            self:SetIronsights( true )
-            owner:SetFOV( 0, 0.2 )
         end
     end )
 end
@@ -284,7 +290,7 @@ function SWEP:IronSight()
     end
 
     -- Set run effect
-    if owner:KeyPressed( IN_SPEED ) and not self:GetReloading() then
+    if self:StartedRunning() and not self:GetReloading() then
         if self:GetNextPrimaryFire() <= ( CurTime() + self.IronSightTime ) then
             self:SetNextPrimaryFire( CurTime() + self.IronSightTime )
         end
@@ -297,14 +303,14 @@ function SWEP:IronSight()
     end
 
     -- Unset run effect
-    if owner:KeyReleased( IN_SPEED ) then
+    if self:StoppedRunning() then
         self:SetIronsights( false )
         owner:SetFOV( 0, self.IronSightTime )
         self.DrawCrosshair = self.XHair
     end
 
     -- Set iron sights
-    if not owner:KeyDown( IN_SPEED ) and owner:KeyPressed( IN_ATTACK2 ) and not self:GetReloading() and not self:GetBoltback() then
+    if not self:IsRunning() and owner:KeyPressed( IN_ATTACK2 ) and not self:GetReloading() and not self:GetBoltback() then
         owner:SetFOV( 75 / selfTbl.Secondary.ScopeZoom, self.IronSightTime )
         selfTbl.IronSightsPos = selfTbl.SightsPos
         selfTbl.IronSightsAng = selfTbl.SightsAng
@@ -314,14 +320,14 @@ function SWEP:IronSight()
     end
 
     -- Unset iron sights
-    if owner:KeyReleased( IN_ATTACK2 ) and not owner:KeyDown( IN_SPEED ) and not self:GetBoltback() then
+    if owner:KeyReleased( IN_ATTACK2 ) and not self:IsRunning() and not self:GetBoltback() then
         owner:SetFOV( 0, self.IronSightTime )
         self.DrawCrosshair = self.XHair
         self:SetIronsights( false )
         self:SetDrawViewmodel( true )
     end
 
-    if pressingM2 and not pressingE and not owner:KeyDown( IN_SPEED ) then
+    if pressingM2 and not pressingE and not self:IsRunning() then
         selfTbl.SwayScale = 0.05
         selfTbl.BobScale  = 0.05
     else
@@ -348,7 +354,7 @@ function SWEP:DrawHUD()
 
     local selfTable = self:GetTable()
     if not owner:KeyDown( IN_ATTACK2 ) then return end
-    if self:GetIronsights() == true and ( not owner:KeyDown( IN_SPEED ) and not owner:KeyDown( IN_USE ) ) then
+    if self:GetIronsights() == true and ( not self:IsRunning() and not owner:KeyDown( IN_USE ) ) then
         if selfTable.Secondary.UseACOG then
             -- Draw the FAKE SCOPE THANG
             surface.SetDrawColor( 0, 0, 0, 255 )
@@ -436,7 +442,7 @@ function SWEP:AdjustMouseSensitivity()
     local owner = entity_GetOwner(self)
     if not IsValid( owner ) then return end
 
-    if owner:KeyDown( IN_SPEED ) then return end
+    if self:IsRunning() then return end
     if not self:GetIronsights() then return end
 
     if owner:KeyDown( IN_ATTACK2 ) then

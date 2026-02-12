@@ -44,15 +44,10 @@ SWEP.InsertingShell         = false
 
 SWEP.NextReload             = 0
 
---[[---------------------------------------------------------
-   Name: SWEP:Think()
-   Desc: Called every frame.
------------------------------------------------------------]]
-
 local entMeta = FindMetaTable( "Entity" )
 local entity_GetOwner = entMeta.GetOwner
 
-function SWEP:Think()
+function SWEP:ThinkCustom()
     local owner = entity_GetOwner(self)
 
     if not IsValid( owner ) then return end
@@ -60,7 +55,7 @@ function SWEP:Think()
     if owner.NextReload == nil then owner.NextReload = CurTime() + 1 end
     local timerName = "ShotgunReload_" .. owner:UniqueID()
     --if the owner presses shoot while the timer is in effect, then...
-    if (owner:KeyPressed( IN_ATTACK )) and (self:GetNextPrimaryFire() <= CurTime()) and (timer.Exists( timerName )) and not (owner:KeyDown( IN_SPEED )) then
+    if (owner:KeyPressed( IN_ATTACK )) and (self:GetNextPrimaryFire() <= CurTime()) and (timer.Exists( timerName )) and not self:IsRunning() then
         if self:CanPrimaryAttack() then --well first, if we actually can attack, then...
             timer.Remove( timerName ) -- kill the timer, and
             self:PrimaryAttack() -- ATTAAAAACK!

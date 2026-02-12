@@ -68,7 +68,7 @@ function SWEP:PrimaryAttack()
     local owner = self:GetOwner()
     if not IsValid( owner ) then return end
 
-    if self:CanPrimaryAttack() and not owner:KeyDown( IN_SPEED ) then
+    if self:CanPrimaryAttack() and not self:IsRunning() then
         self:FireRocket()
         self:EmitSound( "M202F.single" )
         self:TakePrimaryAmmo( 1 )
@@ -122,6 +122,17 @@ function SWEP:Reload()
                 if IsValid( self ) and IsValid( owner ) then
                     if owner:Alive() and owner:GetActiveWeapon():GetClass() == self.Gun then
                         self:SetReloading( false )
+
+                        if self:IsRunning() then
+                            self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
+                            self.IronSightsPos = self.RunSightsPos -- Hold it down
+                            self.IronSightsAng = self.RunSightsAng -- Hold it down
+                            self:SetIronsights( true )
+                            owner:SetFOV( 0, 0.3 )
+
+                            return
+                        end
+
                         if owner:KeyDown( IN_ATTACK2 ) then
                             if CLIENT then return end
                             if self.Scoped == false then
@@ -133,14 +144,6 @@ function SWEP:Reload()
                             else
                                 return
                             end
-                        elseif owner:KeyDown( IN_SPEED ) then
-                            self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
-                            self.IronSightsPos = self.RunSightsPos -- Hold it down
-                            self.IronSightsAng = self.RunSightsAng -- Hold it down
-                            self:SetIronsights( true )
-                            owner:SetFOV( 0, 0.3 )
-                        else
-                            return
                         end
                     end
                 end
