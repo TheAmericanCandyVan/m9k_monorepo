@@ -58,6 +58,7 @@ function SWEP:ThinkCustom()
     if (owner:KeyPressed( IN_ATTACK )) and (self:GetNextPrimaryFire() <= CurTime()) and (timer.Exists( timerName )) and not self:IsRunning() then
         if self:CanPrimaryAttack() then --well first, if we actually can attack, then...
             timer.Remove( timerName ) -- kill the timer, and
+            self:SetReloading( false ) -- stop reloading, and
             self:PrimaryAttack() -- ATTAAAAACK!
         end
     end
@@ -124,6 +125,7 @@ function SWEP:Reload()
     if (timer.Exists( "ShotgunReload_" .. owner:UniqueID() )) or owner.NextReload > CurTime() or maxcap == spaceavail then return end
 
     self:SetReloading( true )
+
     if owner:IsPlayer() then
         if self:GetNextPrimaryFire() <= (CurTime() + 2) then
             self:SetNextPrimaryFire( CurTime() + 2 ) -- wait TWO seconds before you can shoot again
