@@ -35,9 +35,9 @@ SWEP.Primary.Sound          = "40mmGrenade.Single"
 SWEP.Primary.RPM            = 15 -- This is in Rounds Per Minute
 SWEP.Primary.ClipSize       = 1
 SWEP.Primary.DefaultClip    = 1
-SWEP.Primary.KickUp         = 0.3 -- Maximum up recoil (rise)
-SWEP.Primary.KickDown       = 0.3 -- Maximum down recoil (skeet)
-SWEP.Primary.KickHorizontal = 0.3 -- Maximum up recoil (stock)
+SWEP.Primary.KickUp         = 1 -- Maximum up recoil (rise)
+SWEP.Primary.KickDown       = 1 -- Maximum down recoil (skeet)
+SWEP.Primary.KickHorizontal = 0.5 -- Maximum up recoil (stock)
 SWEP.Primary.Automatic      = false -- Automatic = true; Semi Auto = false
 SWEP.Primary.Ammo           = "40mmGrenade"
 
@@ -92,7 +92,7 @@ function SWEP:PrimaryAttack()
         local owner = self:GetOwner()
         if not IsValid( owner ) then return end
 
-        if not self:IsRunning() and not owner:KeyDown( IN_RELOAD ) then
+        if ( not self:IsRunning() or self.CanShootWhileRunning ) and not owner:KeyDown( IN_RELOAD ) then
             self:FireRocket()
             self:EmitSound( self.Primary.Sound )
             self:TakePrimaryAmmo( 1 )
@@ -124,6 +124,8 @@ function SWEP:FireRocket()
         rocket:Spawn()
         rocket:Activate()
     end
+
+    self:AddRecoil()
 end
 
 function SWEP:Reload()
@@ -173,7 +175,7 @@ function SWEP:ThinkCustom()
     if not owner:IsPlayer() then return end
 
     if self.InsertingShell == true and owner:Alive() then
-        vm = owner:GetViewModel() -- its a messy way to do it, but holy shit, it works!
+        local vm = owner:GetViewModel() -- its a messy way to do it, but holy shit, it works!
         vm:ResetSequence( vm:LookupSequence( "after_reload" ) ) -- Fuck you, garry, why the hell can't I reset a sequence in multiplayer?
         vm:SetPlaybackRate( .01 ) -- or if I can, why does facepunch have to be such a shitty community, and your wiki have to be an unreadable goddamn mess?
         self.InsertingShell = false -- You get paid for this, what's your excuse?

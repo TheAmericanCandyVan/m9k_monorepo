@@ -7,7 +7,6 @@ ENT.Instructions      = ""
 
 ENT.Spawnable         = false
 ENT.AdminOnly         = true
-ENT.DoNotDuplicate    = true
 ENT.DisableDuplicator = true
 ENT.ExplosionDamage = 600
 ENT.ExplosionRadius = 200
@@ -31,6 +30,7 @@ if SERVER then
         if (phys:IsValid()) then
             phys:SetMass( 5 )
             phys:Wake()
+            phys:AddGameFlag( FVPHYSICS_NO_IMPACT_DMG )
             phys:AddAngleVelocity( Vector( 0, 500, 0 ) )
         end
         self:Think()
@@ -75,7 +75,6 @@ PhysicsCollide
         effectdata:SetScale( self.ExplosionEffectScale )
         effectdata:SetRadius( 67 )
         effectdata:SetMagnitude( self.ExplosionEffectMagnitude )
-        effectdata:SetHitBox( 3 )
         util.Effect( "m9k_gdcw_cinematicboom", effectdata )
         util.BlastDamage( self, owner, pos, self.ExplosionRadius, self.ExplosionDamage )
         util.ScreenShake( pos, 500, 500, .25, 500 )

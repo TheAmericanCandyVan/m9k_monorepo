@@ -34,11 +34,11 @@ SWEP.Primary.Sound          = ""
 SWEP.Primary.RPM            = 300 -- This is in Rounds Per Minute
 SWEP.Primary.ClipSize       = 4
 SWEP.Primary.DefaultClip    = 4
-SWEP.Primary.KickUp         = 0 -- Maximum up recoil (rise)
-SWEP.Primary.KickDown       = 0 -- Maximum down recoil (skeet)
-SWEP.Primary.KickHorizontal = 0 -- Maximum up recoil (stock)
+SWEP.Primary.KickUp         = 3 -- Maximum up recoil (rise)
+SWEP.Primary.KickDown       = 1 -- Maximum down recoil (skeet)
+SWEP.Primary.KickHorizontal = 1 -- Maximum up recoil (stock)
 SWEP.Primary.Automatic      = true -- Automatic = true; Semi Auto = false
-SWEP.Primary.Ammo           = "m202_rocket"
+SWEP.Primary.Ammo           = "RPG_Round"
 -- pistol, 357, smg1, ar2, buckshot, slam, SniperPenetratedRound, AirboatGun
 -- Pistol, buckshot, and slam always ricochet. Use AirboatGun for a metal piercing shotgun slug
 
@@ -68,7 +68,7 @@ function SWEP:PrimaryAttack()
     local owner = self:GetOwner()
     if not IsValid( owner ) then return end
 
-    if self:CanPrimaryAttack() and not self:IsRunning() then
+    if self:CanPrimaryAttack() and ( not self:IsRunning() or self.CanShootWhileRunning ) then
         self:FireRocket()
         self:EmitSound( "M202F.single" )
         self:TakePrimaryAmmo( 1 )
@@ -96,6 +96,8 @@ function SWEP:FireRocket()
         rocket:Spawn()
         rocket:Activate()
     end
+
+    self:AddRecoil()
 end
 
 function SWEP:Reload()
@@ -111,43 +113,43 @@ function SWEP:Reload()
         self.ResetSights = CurTime() + owner:GetViewModel():SequenceDuration()
     end
     if SERVER then
-        if (self:Clip1() < self.Primary.ClipSize) and not owner:IsNPC() then
+        if self:Clip1() < self.Primary.ClipSize and not owner:IsNPC() then
             owner:SetFOV( 0, 0.3 )
             self:SetIronsights( false )
             self:SetReloading( true )
         end
-        local waitdammit = (owner:GetViewModel():SequenceDuration())
-        timer.Simple( waitdammit + .1,
-            function()
-                if IsValid( self ) and IsValid( owner ) then
-                    if owner:Alive() and owner:GetActiveWeapon():GetClass() == self.Gun then
-                        self:SetReloading( false )
+        local waitdammit = owner:GetViewModel():SequenceDuration()
+        timer.Create( "m9k_reload_" .. self:GetClass() .. self:EntIndex(), waitdammit, 1, function()
+            if not IsValid( self ) then return end
+            if not IsValid( owner ) then return end
+            if not self:GetReloading() then return end
+            if owner:GetActiveWeapon() ~= self then return self:SetReloading( false ) end
 
-                        if self:IsRunning() then
-                            self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
-                            self.IronSightsPos = self.RunSightsPos -- Hold it down
-                            self.IronSightsAng = self.RunSightsAng -- Hold it down
-                            self:SetIronsights( true )
-                            owner:SetFOV( 0, 0.3 )
+            self:SetReloading( false )
 
-                            return
-                        end
+            if self:IsRunning() then
+                self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
+                self.IronSightsPos = self.RunSightsPos -- Hold it down
+                self.IronSightsAng = self.RunSightsAng -- Hold it down
+                self:SetIronsights( true )
+                owner:SetFOV( 0, 0.3 )
 
-                        if owner:KeyDown( IN_ATTACK2 ) then
-                            if CLIENT then return end
-                            if self.Scoped == false then
-                                owner:SetFOV( self.Secondary.IronFOV, 0.3 )
-                                self.IronSightsPos = self.SightsPos -- Bring it up
-                                self.IronSightsAng = self.SightsAng -- Bring it up
-                                self:SetIronsights( true )
-                                self.DrawCrosshair = false
-                            else
-                                return
-                            end
-                        end
-                    end
+                return
+            end
+
+            if owner:KeyDown( IN_ATTACK2 ) then
+                if CLIENT then return end
+                if self.Scoped == false then
+                    owner:SetFOV( self.Secondary.IronFOV, 0.3 )
+                    self.IronSightsPos = self.SightsPos -- Bring it up
+                    self.IronSightsAng = self.SightsAng -- Bring it up
+                    self:SetIronsights( true )
+                    self.DrawCrosshair = false
+                else
+                    return
                 end
-            end )
+            end
+        end )
     end
 end
 

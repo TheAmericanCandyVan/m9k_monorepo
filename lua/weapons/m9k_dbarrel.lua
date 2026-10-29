@@ -76,7 +76,7 @@ function SWEP:SecondaryAttack()
 
     if owner:IsPlayer() then
         if self:Clip1() == 2 then
-            if not self:IsRunning() and not owner:KeyDown( IN_RELOAD ) then
+            if ( not self:IsRunning() or self.CanShootWhileRunning ) and not owner:KeyDown( IN_RELOAD ) then
                 self:ShootBulletInformation2()
                 self:TakePrimaryAmmo( 2 )
                 self:SendWeaponAnim( ACT_VM_PRIMARYATTACK )
@@ -114,7 +114,7 @@ function SWEP:PrimaryAttack()
     if timer.Exists( timerName ) then return end
 
     if owner:IsPlayer() then
-        if not self:IsRunning() and not owner:KeyDown( IN_RELOAD ) then
+        if ( not self:IsRunning() or self.CanShootWhileRunning ) and not owner:KeyDown( IN_RELOAD ) then
             self:ShootBulletInformation()
             self:TakePrimaryAmmo( 1 )
 
@@ -209,7 +209,7 @@ function SWEP:ThinkCustom()
     if owner.NextReload == nil then owner.NextReload = CurTime() + 1 end
 
     if self.InsertingShell == true and owner:Alive() then
-        vm = owner:GetViewModel() -- its a messy way to do it, but holy shit, it works!
+        local vm = owner:GetViewModel() -- its a messy way to do it, but holy shit, it works!
         vm:ResetSequence( vm:LookupSequence( "after_reload" ) ) -- Fuck you, garry, why the hell can't I reset a sequence in multiplayer?
         vm:SetPlaybackRate( .01 ) -- or if I can, why does facepunch have to be such a shitty community, and your wiki have to be an unreadable goddamn mess?
         self.InsertingShell = false -- You get paid for this, what's your excuse?

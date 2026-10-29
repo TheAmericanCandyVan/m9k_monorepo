@@ -7,7 +7,6 @@ ENT.Instructions      = "LAUNCH"
 
 ENT.Spawnable         = false
 ENT.AdminOnly         = true
-ENT.DoNotDuplicate    = true
 ENT.DisableDuplicator = true
 
 if SERVER then
@@ -84,35 +83,41 @@ if SERVER then
 end
 
 if CLIENT then
-    function ENT:Draw()
-        self:DrawModel() -- Draw the model.
-    end
-
-    function ENT:Initialize()
-        pos = self:GetPos()
-        self.emitter = ParticleEmitter( pos )
+    function ENT:OnRemove()
+        if self.emitter then
+            self.emitter:Finish()
+        end
     end
 
     function ENT:Think()
-        if (self:GetNWBool( "smoke" )) then
-            pos = self:GetPos()
-            for i = 0, (10) do
-                local particle = self.emitter:Add( "particle/smokesprites_000" .. math.random( 1, 9 ), pos + (self:GetForward() * -100 * i) )
-                if (particle) then
-                    particle:SetVelocity( (self:GetForward() * -2000) )
-                    particle:SetDieTime( math.Rand( 1.5, 3 ) )
-                    particle:SetStartAlpha( math.Rand( 5, 8 ) )
-                    particle:SetEndAlpha( 0 )
-                    particle:SetStartSize( math.Rand( 40, 50 ) )
-                    particle:SetEndSize( math.Rand( 130, 150 ) )
-                    particle:SetRoll( math.Rand( 0, 360 ) )
-                    particle:SetRollDelta( math.Rand( -1, 1 ) )
-                    particle:SetColor( 200, 200, 200 )
-                    particle:SetAirResistance( 200 )
-                    particle:SetGravity( Vector( 100, 0, 0 ) )
+        if self:GetNWBool( "smoke" ) then
+            local forward = self:GetForward()
+            local pos = self:GetPos()
+            local emitter = self.emitter
+
+            if not emitter then
+                emitter = ParticleEmitter( pos )
+                self.emitter = emitter
+            end
+
+            for i = 0, 10 do
+                if IsValid( emitter ) then
+                    local particle = emitter:Add( "particle/smokesprites_000" .. math.random( 1, 9 ), pos + ( forward * -100 * i ) )
+                    if particle then
+                        particle:SetVelocity( forward * -2000 )
+                        particle:SetDieTime( math.Rand( 1.5, 3 ) )
+                        particle:SetStartAlpha( math.Rand( 5, 8 ) )
+                        particle:SetEndAlpha( 0 )
+                        particle:SetStartSize( math.Rand( 40, 50 ) )
+                        particle:SetEndSize( math.Rand( 130, 150 ) )
+                        particle:SetRoll( math.Rand( 0, 360 ) )
+                        particle:SetRollDelta( math.Rand( -1, 1 ) )
+                        particle:SetColor( 200, 200, 200 )
+                        particle:SetAirResistance( 200 )
+                        particle:SetGravity( Vector( 100, 0, 0 ) )
+                    end
                 end
             end
         end
     end
 end
-

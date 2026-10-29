@@ -6,7 +6,6 @@ ENT.Purpose           = ""
 ENT.Instructions      = ""
 ENT.Spawnable         = false
 ENT.AdminOnly         = true
-ENT.DoNotDuplicate    = true
 ENT.DisableDuplicator = true
 
 if SERVER then
@@ -22,6 +21,7 @@ if SERVER then
 
         local phys = self:GetPhysicsObject()
         if (phys:IsValid()) then
+            phys:AddGameFlag( FVPHYSICS_NO_IMPACT_DMG )
             phys:Wake()
         end
 

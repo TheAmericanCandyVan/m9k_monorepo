@@ -6,7 +6,6 @@ ENT.Purpose = ""
 ENT.Instructions = ""
 ENT.Spawnable = false
 ENT.AdminOnly = true
-ENT.DoNotDuplicate = true
 ENT.DisableDuplicator = true
 ENT.CanTool = false
 
@@ -91,7 +90,7 @@ function ENT:VectorGet()
     downtrace.start = startpos
     downtrace.endpos = startpos + self:GetUp() * -5
     downtrace.filter = self
-    tracedown = util.TraceLine( downtrace )
+    local tracedown = util.TraceLine( downtrace )
 
     if tracedown.Hit then
         return tracedown.HitNormal

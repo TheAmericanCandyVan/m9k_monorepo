@@ -71,7 +71,7 @@ function SWEP:PrimaryAttack()
 
     if owner:IsNPC() then return end
     if not self:CanPrimaryAttack() then return end
-    if self:IsRunning() then return end
+    if self:IsRunning() and not self.CanShootWhileRunning then return end
 
     self.RicochetCoin = math.random( 1, 4 )
     self:ShootBulletInformation()
@@ -111,7 +111,7 @@ function SWEP:UseBolt()
             if not IsValid( self ) or not IsValid( owner ) then return end
             self:SetReloading( false )
 
-            if self:IsRunning() then
+            if self:IsRunning() and not self.CanShootWhileRunning then
                 self.IronSightsPos = self.RunSightsPos -- Hold it down
                 self.IronSightsAng = self.RunSightsAng -- Hold it down
                 self:SetIronsights( false )
@@ -175,7 +175,7 @@ function SWEP:Reload()
         end
 
         if SERVER then
-            if (self:Clip1() < self.Primary.ClipSize) and not owner:IsNPC() then
+            if self:Clip1() < self.Primary.ClipSize and not owner:IsNPC() then
                 -- --When the current clip < full clip and the rest of your ammo > 0, then
                 owner:SetFOV( 0, 0.3 )
                 -- --Zoom = 0
@@ -183,12 +183,12 @@ function SWEP:Reload()
                 self:SetReloading( true )
             end
             local waitdammit = owner:GetViewModel():SequenceDuration()
-            timer.Simple( waitdammit + .1, function()
+            timer.Create( "m9k_reload_" .. self:GetClass() .. self:EntIndex(), waitdammit, 1, function()
                 if not IsValid( self ) then return end
                 self:SetReloading( false )
 
-                if self:IsRunning() then
-                    if self:GetNextPrimaryFire() <= (CurTime() + .03) then
+                if self:IsRunning() and not self.CanShootWhileRunning then
+                    if self:GetNextPrimaryFire() <= CurTime() + .03 then
                         self:SetNextPrimaryFire( CurTime() + 0.3 ) -- Make it so you can't shoot for another quarter second
                     end
                     self.IronSightsPos = self.RunSightsPos -- Hold it down

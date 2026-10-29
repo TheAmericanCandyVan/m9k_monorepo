@@ -73,11 +73,12 @@ function SWEP:PrimaryAttack()
 
             if SERVER then
                 timer.Simple( 0.1, function()
-                    if not IsValid( self ) then return end
+                    if not IsValid( self ) or not IsValid( owner ) or not owner:Alive() then return end
 
-                    if IsValid( owner ) and owner:Alive() and owner:GetActiveWeapon():GetClass() == self.Gun then
-                        self:Jab()
-                    end
+                    local weapon = owner:GetActiveWeapon()
+                    if not IsValid( weapon ) or weapon:GetClass() ~= self.Gun then return end
+
+                    self:Jab()
                 end )
             end
             owner:SetAnimation( PLAYER_ATTACK1 )
@@ -108,13 +109,14 @@ function SWEP:Jab()
     owner:LagCompensation( false )
 
     if slashtrace.Hit then
-        targ = slashtrace.Entity
+        local targ = slashtrace.Entity
         if targ:IsPlayer() or targ:IsNPC() then
             self:EmitSound( Sound( table.Random( punchtable ) ) )
             local paininfo = DamageInfo()
             paininfo:SetDamage( pain )
             paininfo:SetAttacker( owner )
             paininfo:SetInflictor( self )
+            paininfo:SetWeapon( self )
             paininfo:SetDamageForce( slashtrace.Normal * 5000 )
 
             if targ:IsPlayer() then

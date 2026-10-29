@@ -35,7 +35,7 @@ SWEP.Primary.Sound          = "40mmGrenade.Single"
 SWEP.Primary.RPM            = 45 -- This is in Rounds Per Minute
 SWEP.Primary.ClipSize       = 3
 SWEP.Primary.DefaultClip    = 6
-SWEP.Primary.KickUp         = 0.3 -- Maximum up recoil (rise)
+SWEP.Primary.KickUp         = 1 -- Maximum up recoil (rise)
 SWEP.Primary.KickDown       = 0.3 -- Maximum down recoil (skeet)
 SWEP.Primary.KickHorizontal = 0.3 -- Maximum up recoil (stock)
 SWEP.Primary.Automatic      = false -- Automatic = true; Semi Auto = false
@@ -63,7 +63,7 @@ function SWEP:PrimaryAttack()
     local owner = self:GetOwner()
     if not IsValid( owner ) then return end
 
-    if not self:IsRunning() and not owner:KeyDown( IN_RELOAD ) then
+    if ( not self:IsRunning() or self.CanShootWhileRunning ) and not owner:KeyDown( IN_RELOAD ) then
         self:FireRocket()
         self:EmitSound( self.Primary.Sound )
         self:TakePrimaryAmmo( 1 )
@@ -94,4 +94,6 @@ function SWEP:FireRocket()
         rocket:Spawn()
         rocket:Activate()
     end
+
+    self:AddRecoil()
 end

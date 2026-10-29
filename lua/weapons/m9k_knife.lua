@@ -135,12 +135,13 @@ function SWEP:ThinkCustom()
                     paininfo:SetDamageType( DMG_SLASH )
                     paininfo:SetAttacker( owner )
                     paininfo:SetInflictor( self )
+                    paininfo:SetWeapon( self )
                     paininfo:SetDamageForce( slashtrace.Normal * 20000 )
                     targ:TakeDamageInfo( paininfo )
                 end
             else
                 self:EmitSound( self.KnifeShink )
-                look = owner:GetEyeTrace()
+                local look = owner:GetEyeTrace()
                 util.Decal( "ManhackCut", look.HitPos + look.HitNormal, look.HitPos - look.HitNormal )
             end
         end

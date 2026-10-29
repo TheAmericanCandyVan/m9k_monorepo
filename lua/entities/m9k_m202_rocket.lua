@@ -7,7 +7,6 @@ ENT.Instructions      = "LAUNCH"
 
 ENT.Spawnable         = false
 ENT.AdminOnly         = true
-ENT.DoNotDuplicate    = true
 ENT.DisableDuplicator = true
 
 if SERVER then
@@ -123,22 +122,27 @@ if SERVER then
 end
 
 if CLIENT then
-    function ENT:Draw()
-        self:DrawModel() -- Draw the model.
-    end
-
-    function ENT:Initialize()
-        pos = self:GetPos()
-        self.emitter = ParticleEmitter( pos )
+    function ENT:OnRemove()
+        if self.emitter then
+            self.emitter:Finish()
+        end
     end
 
     function ENT:Think()
-        if (self:GetNWBool( "smoke" )) then
-            pos = self:GetPos()
-            for i = 1, (1) do
-                local particle = self.emitter:Add( "particle/smokesprites_000" .. math.random( 1, 9 ), pos + (self:GetForward() * -120 * i) )
-                if (particle) then
-                    particle:SetVelocity( (self:GetForward() * -2000) + (VectorRand() * 100) )
+        if self:GetNWBool( "smoke" ) then
+            local forward = self:GetForward()
+            local pos = self:GetPos()
+            local emitter = self.emitter
+
+            if not emitter then
+                emitter = ParticleEmitter( pos )
+                self.emitter = emitter
+            end
+
+            if IsValid( emitter ) then
+                local particle = emitter:Add( "particle/smokesprites_000" .. math.random( 1, 9 ), pos + ( forward * -120 ) )
+                if particle then
+                    particle:SetVelocity( forward * -2000 + VectorRand( -100, 100 ) )
                     particle:SetDieTime( math.Rand( 2, 5 ) )
                     particle:SetStartAlpha( math.Rand( 7, 10 ) )
                     particle:SetEndAlpha( 0 )
@@ -154,4 +158,3 @@ if CLIENT then
         end
     end
 end
-

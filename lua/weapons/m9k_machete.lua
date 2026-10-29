@@ -117,15 +117,16 @@ function SWEP:HackNSlash()
 
             owner:ViewPunch( Angle( 20, 0, 0 ) )
             if slashtrace.Hit then
-                targ = slashtrace.Entity
+                local targ = slashtrace.Entity
                 if targ:IsPlayer() or targ:IsNPC() then
                     --find a way to splash a little blood
                     self:EmitSound( self.KnifeSlash ) --stab noise
-                    paininfo = DamageInfo()
+                    local paininfo = DamageInfo()
                     paininfo:SetDamage( pain )
                     paininfo:SetDamageType( DMG_SLASH )
                     paininfo:SetAttacker( owner )
                     paininfo:SetInflictor( self )
+                    paininfo:SetWeapon( self )
                     paininfo:SetDamageForce( slashtrace.Normal * 35000 )
                     targ:TakeDamageInfo( paininfo )
                 else
@@ -142,7 +143,7 @@ function SWEP:SecondaryAttack()
 
     local owner = self:GetOwner()
 
-    if not self:IsRunning() and not owner:KeyDown( IN_RELOAD ) then
+    if ( not self:IsRunning() or self.CanShootWhileRunning ) and not owner:KeyDown( IN_RELOAD ) then
         self:EmitSound( "Weapon_Knife.Slash" )
 
         if SERVER then

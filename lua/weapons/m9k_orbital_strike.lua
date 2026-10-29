@@ -89,7 +89,12 @@ function SWEP:PrimaryAttack()
     local owner = self:GetOwner()
 
     if self:CanPrimaryAttack() and owner:IsPlayer() and self.NextShoot <= CurTime() then
-        if not self:IsRunning() and not owner:KeyDown( IN_RELOAD ) then
+        if GetConVar( "OrbitalStrikeAdminOnly" ):GetBool() and not owner:IsAdmin() then
+            owner:PrintMessage( HUD_PRINTCENTER, "Orbital strikes are admin only on this server." )
+            return
+        end
+
+        if ( not self:IsRunning() or self.CanShootWhileRunning ) and not owner:KeyDown( IN_RELOAD ) then
             local mark = owner:GetEyeTrace()
             if mark.HitSky then
                 owner:EmitSound( "player/suit_denydevice.wav" )
@@ -98,7 +103,7 @@ function SWEP:PrimaryAttack()
             local skytrace = {}
             skytrace.start = mark.HitPos
             skytrace.endpos = mark.HitPos + Vector( 0, 0, 65000 )
-            skycheck = util.TraceLine( skytrace )
+            local skycheck = util.TraceLine( skytrace )
             if skycheck.HitSky then
                 if SERVER then
                     local Sky = skycheck.HitPos - Vector( 0, 0, 10 )
@@ -118,12 +123,12 @@ function SWEP:PrimaryAttack()
                 self:Reload()
             elseif mark.Entity:IsPlayer() or mark.Entity:IsNPC() then
                 self.PoorBastard = true
-                thetarget = mark.Entity
-                skytrace2 = {}
+                local thetarget = mark.Entity
+                local skytrace2 = {}
                 skytrace2.start = thetarget:GetPos()
                 skytrace2.endpos = thetarget:GetPos() + Vector( 0, 0, 65000 )
                 skytrace2.filter = thetarget
-                skycheck2 = util.TraceLine( skytrace2 )
+                local skycheck2 = util.TraceLine( skytrace2 )
                 if skycheck2.HitSky then --someone's gonna be in big trouble
                     local sky2 = skycheck2.HitPos - Vector( 0, 0, 10 )
                     if SERVER then
@@ -149,13 +154,5 @@ function SWEP:PrimaryAttack()
                 owner:EmitSound( "player/suit_denydevice.wav" )
             end
         end
-    end
-end
-
-if GetConVar( "OrbitalStrikeAdminOnly" ) == nil then
-    print( "OrbitalStrikeAdminOnly is missing! You may have hit the lua limit!" )
-else
-    if GetConVar( "OrbitalStrikeAdminOnly" ):GetInt() == 1 then
-        SWEP.Spawnable = false
     end
 end

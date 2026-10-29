@@ -3,7 +3,6 @@ AddCSLuaFile()
 ENT.Type = "anim"
 ENT.Spawnable = false
 ENT.AdminOnly = true
-ENT.DoNotDuplicate = true
 ENT.DisableDuplicator = true
 ENT.CanTool = false
 ENT.InFlight = true
@@ -30,10 +29,9 @@ if SERVER then
 
         if phys:IsValid() then
             phys:Wake()
-            phys:SetMass( 10 )
+            phys:SetMass( 2 )
+            phys:AddGameFlag( FVPHYSICS_NO_IMPACT_DMG )
         end
-
-        self:GetPhysicsObject():SetMass( 2 )
 
         self:SetUseType( SIMPLE_USE )
     end

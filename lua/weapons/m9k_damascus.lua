@@ -101,7 +101,7 @@ function SWEP:PrimaryAttack()
         owner:LagCompensation( false )
 
         if slashtrace.Hit then
-            targ = slashtrace.Entity
+            local targ = slashtrace.Entity
             if targ:IsPlayer() or targ:IsNPC() then
                 self:EmitSound( self.SwordChop )
                 if SERVER then
@@ -110,6 +110,7 @@ function SWEP:PrimaryAttack()
                     paininfo:SetDamageType( DMG_SLASH )
                     paininfo:SetAttacker( owner )
                     paininfo:SetInflictor( self )
+                    paininfo:SetWeapon( self )
                     paininfo:SetDamageForce( slashtrace.Normal * 35000 )
                     targ:TakeDamageInfo( paininfo )
                 end
